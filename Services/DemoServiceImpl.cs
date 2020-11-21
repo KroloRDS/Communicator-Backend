@@ -17,7 +17,7 @@ namespace Communicator.Services
 
 		public void Add(DemoRequest request)
 		{
-			_context.DemoEntities.Add(new DemoEntity
+			_context.DemoEntity.Add(new DemoEntity
 			{
 				Name = request.Name
 			});
@@ -26,7 +26,7 @@ namespace Communicator.Services
 
 		public List<DemoResponse> GetAll()
 		{
-			return _context.DemoEntities.Select(x => new DemoResponse(x.ID, x.Name)).ToList();
+			return _context.DemoEntity.Select(x => new DemoResponse(x.ID, x.Name)).ToList();
 		}
 	}
 }

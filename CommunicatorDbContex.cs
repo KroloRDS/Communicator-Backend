@@ -9,6 +9,6 @@ namespace Communicator.Repositories
 		{
 		}
 
-		public DbSet<DemoEntity> DemoEntities { get; set; }
+		public DbSet<DemoEntity> DemoEntity { get; set; }
 	}
 }

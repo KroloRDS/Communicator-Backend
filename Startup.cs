@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
+
 using Communicator.Repositories;
 using Communicator.Services;
 
@@ -21,12 +22,9 @@ namespace Communicator
 
 		public void ConfigureServices(IServiceCollection services)
 		{
-
 			services.AddControllers();
 			services.AddScoped<IDemoService, DemoServiceImpl>();
-			services.AddDbContext<CommunicatorDbContex>
-				(opt => opt.UseInMemoryDatabase("Communicator"));
-
+			services.AddDbContext<CommunicatorDbContex>(opt => opt.UseSqlServer(GetConnectionString()));
 			services.AddSwaggerGen(c =>
 			{
 				c.SwaggerDoc("v1", new OpenApiInfo { Title = "Communicator", Version = "v1" });
@@ -52,6 +50,12 @@ namespace Communicator
 			{
 				endpoints.MapControllers();
 			});
+		}
+
+		private string GetConnectionString()
+		{
+			return Configuration.GetConnectionString("DefaultConnection") +
+				System.Environment.CurrentDirectory + "\\Database\\db.mdf;";
 		}
 	}
 }
