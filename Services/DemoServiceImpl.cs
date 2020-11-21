@@ -2,6 +2,7 @@
 using System.Linq;
 
 using Communicator.Repositories;
+using Communicator.Entities;
 using Communicator.DTOs;
 
 namespace Communicator.Services

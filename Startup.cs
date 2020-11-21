@@ -24,6 +24,7 @@ namespace Communicator
 		{
 			services.AddControllers();
 			services.AddScoped<IDemoService, DemoServiceImpl>();
+			services.AddScoped<IUserService, UserServiceImpl>();
 			services.AddDbContext<CommunicatorDbContex>(opt => opt.UseSqlServer(GetConnectionString()));
 			services.AddSwaggerGen(c =>
 			{

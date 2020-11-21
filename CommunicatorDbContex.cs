@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
+using Communicator.Entities;
+
 namespace Communicator.Repositories
 {
 	public class CommunicatorDbContex : DbContext
@@ -10,5 +12,6 @@ namespace Communicator.Repositories
 		}
 
 		public DbSet<DemoEntity> DemoEntity { get; set; }
+		public DbSet<UserEntity> UserEntity { get; set; }
 	}
 }

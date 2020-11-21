@@ -1,6 +1,6 @@
-﻿namespace Communicator.Entities
+﻿namespace Communicator.DTOs
 {
-	public class UserEntity
+	public class UserResponse
 	{
 		public int ID { get; set; }
 		public string Login { get; set; }

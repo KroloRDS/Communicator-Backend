@@ -1,18 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Communicator.Entities
 {
-    public class MessageEntity
-    {
-        public int ID { get; set; }
-        public int senderId  { get; set; }
-        public int receiverId { get; set; }
-        public string senderEncryptedContent { get; set; }
-        public string receiverEncryptedContent { get; set; }
-        public string sendDateTime { get; set; }
-        public bool seenByReceiver { get; set; }
-    }
+	public class MessageEntity
+	{
+		public int ID { get; set; }
+		public int SenderID  { get; set; }
+		public int ReceiverID { get; set; }
+		public string SenderEncryptedContent { get; set; }
+		public string ReceiverEncryptedContent { get; set; }
+		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+		public DateTime SentDateTime { get; }
+		public bool SeenByReceiver { get; set; }
+	}
 }

@@ -1,4 +1,4 @@
-namespace Communicator
+namespace Communicator.Entities
 {
 	public class DemoEntity
 	{
