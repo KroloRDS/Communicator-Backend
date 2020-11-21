@@ -25,7 +25,7 @@ namespace Communicator
 			services.AddControllers();
 			services.AddScoped<IDemoService, DemoServiceImpl>();
 			services.AddDbContext<CommunicatorDbContex>
-				(opt => opt.UseInMemoryDatabase("Communicator"));
+			(opt => opt.UseInMemoryDatabase("Communicator"));
 
 			services.AddSwaggerGen(c =>
 			{
