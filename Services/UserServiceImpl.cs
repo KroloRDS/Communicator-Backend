@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System;
 
 using Communicator.Repositories;
@@ -16,6 +15,7 @@ namespace Communicator.Services
 		{
 			_context = context;
 		}
+		
 		public void Add(UserRequest request)
 		{
 			int random = new Random().Next();

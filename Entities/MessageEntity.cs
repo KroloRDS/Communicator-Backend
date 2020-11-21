@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Communicator.Entities
 {
@@ -10,8 +9,7 @@ namespace Communicator.Entities
 		public int ReceiverID { get; set; }
 		public string SenderEncryptedContent { get; set; }
 		public string ReceiverEncryptedContent { get; set; }
-		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-		public DateTime SentDateTime { get; }
+		public DateTime SentDateTime { get; set; }
 		public bool SeenByReceiver { get; set; }
 	}
 }

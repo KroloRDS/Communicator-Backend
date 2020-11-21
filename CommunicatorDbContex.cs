@@ -13,5 +13,6 @@ namespace Communicator.Repositories
 
 		public DbSet<DemoEntity> DemoEntity { get; set; }
 		public DbSet<UserEntity> UserEntity { get; set; }
+		public DbSet<MessageEntity> MessageEntity { get; set; }
 	}
 }
