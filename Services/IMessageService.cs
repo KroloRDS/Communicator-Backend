@@ -10,6 +10,7 @@ namespace Communicator.Services
 		void Add(MessageRequest request);
 		void Delete(int id);
 		void Update(int id);
+		MessageResponse GetMessage(int id, bool sender);
 		List<MessageResponse> GetMessages(DateTime time, int userId, int friendId);
 	}
 }

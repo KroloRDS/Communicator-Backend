@@ -37,6 +37,14 @@ namespace Communicator.Controllers
 		}
 
 		[HttpGet]
+		[Route("GetByID")]
+		public MessageResponse GetByID(int id, bool sender)
+		{
+			return _service.GetMessage(id, sender);
+		}
+
+		[HttpGet]
+		[Route("GetMessages")]
 		public List<MessageResponse> GetMessages(DateTime time, int userId, int friendId)
 		{
 			return _service.GetMessages(time, userId, friendId);

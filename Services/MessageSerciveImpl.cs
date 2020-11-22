@@ -53,6 +53,25 @@ namespace Communicator.Services
 			//TODO: return codes
 		}
 
+		public MessageResponse GetMessage(int id, bool sender)
+		{
+			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
+			var response = new MessageResponse();
+			if (message != null)
+			{
+				response.ID = message.ID;
+				response.SenderID = message.SenderID;
+				response.ReceiverID = message.ReceiverID;
+				response.Content = sender ?
+					message.SenderEncryptedContent :
+					message.ReceiverEncryptedContent;
+				response.SentDateTime = message.SentDateTime;
+				response.SeenByReceiver = message.SeenByReceiver;
+			}
+			return response;
+			//TODO: return codes
+		}
+
 		public List<MessageResponse> GetMessages(DateTime time, int userId, int friendId)
 		{
 			return _context.MessageEntity
