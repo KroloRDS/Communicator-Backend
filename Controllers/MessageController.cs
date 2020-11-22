@@ -9,7 +9,7 @@ namespace Communicator.Controllers
 {
 	[ApiController]
 	[Route("[controller]")]
-	public class MessageController : ControllerBase
+	public class MessageController : Controller
 	{
 		private readonly IMessageService _service;
 
@@ -19,32 +19,31 @@ namespace Communicator.Controllers
 		}
 
 		[HttpPost]
-		public void Add(MessageRequest request)
+		public IActionResult Add(MessageRequest request)
 		{
-			_service.Add(request);
+			return _service.Add(request) ? Ok() : BadRequest();
 		}
 
 		[HttpDelete]
-		public void Delete(int id)
+		public IActionResult Delete(int id)
 		{
-			_service.Delete(id);
+			return _service.Delete(id) ? Ok() : BadRequest();
 		}
 
 		[HttpPut]
-		public void Update(int id)
+		public IActionResult Update(int id)
 		{
-			_service.Update(id);
+			return _service.Update(id) ? Ok() : BadRequest();
 		}
 
-		[HttpGet]
-		[Route("GetByID")]
-		public MessageResponse GetByID(int id, bool sender)
+		[HttpGet][Route("GetByID")]
+		public IActionResult GetByID(int id, bool sender)
 		{
-			return _service.GetMessage(id, sender);
+			var response = _service.GetMessage(id, sender);
+			return response != null ? Ok(response) : BadRequest();
 		}
 
-		[HttpGet]
-		[Route("GetMessages")]
+		[HttpGet][Route("GetMessages")]
 		public List<MessageResponse> GetMessages(DateTime time, int userId, int friendId)
 		{
 			return _service.GetMessages(time, userId, friendId);

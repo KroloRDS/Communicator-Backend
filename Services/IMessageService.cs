@@ -7,9 +7,9 @@ namespace Communicator.Services
 {
 	public interface IMessageService
 	{
-		void Add(MessageRequest request);
-		void Delete(int id);
-		void Update(int id);
+		bool Add(MessageRequest request);
+		bool Delete(int id);
+		bool Update(int id);
 		MessageResponse GetMessage(int id, bool sender);
 		List<MessageResponse> GetMessages(DateTime time, int userId, int friendId);
 	}

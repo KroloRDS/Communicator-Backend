@@ -17,7 +17,7 @@ namespace Communicator.Services
 			_context = context;
 		}
 
-		public void Add(MessageRequest request)
+		public bool Add(MessageRequest request)
 		{
 			_context.MessageEntity.Add(new MessageEntity
 			{
@@ -29,47 +29,54 @@ namespace Communicator.Services
 				SeenByReceiver = false
 			});
 			_context.SaveChanges();
+			return true;
 		}
 
-		public void Delete(int id)
+		public bool Delete(int id)
+		{
+			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
+			if (message == null)
+			{
+				return false;
+			}
+
+			_context.MessageEntity.Remove(message);
+			_context.SaveChanges();
+			return true;
+		}
+
+		public bool Update(int id)
 		{
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
 			if (message != null)
 			{
-				_context.MessageEntity.Remove(message);
-				_context.SaveChanges();
+				return false;
 			}
-			//TODO: return codes
-		}
 
-		public void Update(int id)
-		{
-			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
-			if (message != null)
-			{
-				message.SeenByReceiver = true;
-				_context.SaveChanges();
-			}
-			//TODO: return codes
+			message.SeenByReceiver = true;
+			_context.SaveChanges();
+			return true;
 		}
 
 		public MessageResponse GetMessage(int id, bool sender)
 		{
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
-			var response = new MessageResponse();
-			if (message != null)
+			if (message == null)
 			{
-				response.ID = message.ID;
-				response.SenderID = message.SenderID;
-				response.ReceiverID = message.ReceiverID;
-				response.Content = sender ?
-					message.SenderEncryptedContent :
-					message.ReceiverEncryptedContent;
-				response.SentDateTime = message.SentDateTime;
-				response.SeenByReceiver = message.SeenByReceiver;
+				return null;
 			}
-			return response;
-			//TODO: return codes
+
+			return new MessageResponse
+			{
+				ID = message.ID,
+				SenderID = message.SenderID,
+				ReceiverID = message.ReceiverID,
+				Content = sender ?
+				message.SenderEncryptedContent :
+				message.ReceiverEncryptedContent,
+				SentDateTime = message.SentDateTime,
+				SeenByReceiver = message.SeenByReceiver
+			};
 		}
 
 		public List<MessageResponse> GetMessages(DateTime time, int userId, int friendId)

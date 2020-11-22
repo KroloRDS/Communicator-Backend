@@ -16,7 +16,7 @@ namespace Communicator.Services
 			_context = context;
 		}
 		
-		public void Add(UserRequest request)
+		public bool Add(UserRequest request)
 		{
 			int random = new Random().Next();
 			string pw = request.Password + random.ToString();
@@ -31,17 +31,20 @@ namespace Communicator.Services
 				PublicKey = "???" //TODO: generate from password = private key
 			});
 			_context.SaveChanges();
+			return true;
 		}
 
-		public void Delete(int id)
+		public bool Delete(int id)
 		{
 			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
-			if (user != null)
+			if (user == null)
 			{
-				_context.UserEntity.Remove(user);
-				_context.SaveChanges();
+				return false;
 			}
-			//TODO: return codes
+
+			_context.UserEntity.Remove(user);
+			_context.SaveChanges();
+			return true;
 		}
 
 		public UserResponse GetByID(int id)
@@ -50,7 +53,6 @@ namespace Communicator.Services
 			if (user == null)
 			{
 				return null;
-				//TODO: return codes
 			}
 
 			return new UserResponse

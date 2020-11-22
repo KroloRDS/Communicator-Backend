@@ -6,8 +6,8 @@ namespace Communicator.Services
 {
 	public interface IUserService
 	{
-		void Add(UserRequest request);
-		void Delete(int id);
+		bool Add(UserRequest request);
+		bool Delete(int id);
 		UserResponse GetByID(int id);
 	}
 }

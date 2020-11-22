@@ -7,7 +7,7 @@ namespace Communicator.Controllers
 {
 	[ApiController]
 	[Route("[controller]")]
-	public class UserController : ControllerBase
+	public class UserController : Controller
 	{
 		private readonly IUserService _service;
 
@@ -17,21 +17,22 @@ namespace Communicator.Controllers
 		}
 
 		[HttpPost]
-		public void Add(UserRequest request)
+		public IActionResult Add(UserRequest request)
 		{
-			_service.Add(request);
+			return _service.Add(request) ? Ok() : BadRequest();
 		}
 
 		[HttpDelete]
-		public void Delete(int id)
+		public IActionResult Delete(int id)
 		{
-			_service.Delete(id);
+			return _service.Delete(id) ? Ok() : BadRequest();
 		}
 
 		[HttpGet]
-		public UserResponse GetByID(int id)
+		public IActionResult GetByID(int id)
 		{
-			return _service.GetByID(id);
+			var response = _service.GetByID(id);
+			return response != null ? Ok(response) : BadRequest();
 		}
 	}
 }
