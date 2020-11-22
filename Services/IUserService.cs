@@ -4,11 +4,11 @@ namespace Communicator.Services
 {
 	public interface IUserService
 	{
-		bool Add(UserRequest request);
+		bool Add(UserCreateNewRequest request);
 		bool Delete(int id);
-		bool Login(string login, string pw);
+		int Login(UserLoginRequest request);
 		bool UpdateBankAccount(int id, string account);
-		bool UpdateCredentials(int id, UserRequest request, string oldPassword);
+		bool UpdateCredentials(int id, UserUpdateCredentialsRequest request);
 		UserResponse GetByID(int id);
 	}
 }

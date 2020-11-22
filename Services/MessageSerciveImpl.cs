@@ -16,7 +16,7 @@ namespace Communicator.Services
 			_context = context;
 		}
 
-		public bool Add(MessageRequest request)
+		public bool Add(MessageCreateNewRequest request)
 		{
 			if (request.SenderID == request.ReceiverID)
 			{
@@ -103,17 +103,17 @@ namespace Communicator.Services
 			};
 		}
 
-		public List<MessageResponse> GetBatch(DateTime time, int userId, int friendId)
+		public List<MessageResponse> GetBatch(int userId, MessageGetBatchRequest request)
 		{
-			if (userId == friendId)
+			if (userId == request.FriendID)
 			{
 				return null;
 			}
 
 			return _context.MessageEntity
-				.Where(x => ((x.SenderID == userId && x.ReceiverID == friendId) ||
-				(x.ReceiverID == userId && x.SenderID == friendId)) &&
-				x.SentDateTime < time)
+				.Where(x => ((x.SenderID == userId && x.ReceiverID == request.FriendID) ||
+				(x.ReceiverID == userId && x.SenderID == request.FriendID)) &&
+				x.SentDateTime < request.Timestamp)
 				.OrderBy(x => x.SentDateTime)
 				.Take(50)
 				.Select(x => new MessageResponse

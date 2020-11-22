@@ -17,7 +17,7 @@ namespace Communicator.Services
 			_context = context;
 		}
 		
-		public bool Add(UserRequest request)
+		public bool Add(UserCreateNewRequest request)
 		{
 			if (_context.UserEntity.FirstOrDefault(x => x.Login == request.Login ||
 			x.Email == request.Email) != null)
@@ -32,7 +32,6 @@ namespace Communicator.Services
 			{
 				Login = request.Login,
 				Email = request.Email,
-				BankAccount = request.BankAccount,
 				PasswordHash = Hash(pw),
 				Salt = random,
 				PublicKey = "???" //TODO: generate from password = private key
@@ -75,7 +74,7 @@ namespace Communicator.Services
 			return true;
 		}
 
-		public bool UpdateCredentials(int id, UserRequest request, string oldPassword)
+		public bool UpdateCredentials(int id, UserUpdateCredentialsRequest request)
 		{
 			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
 			if (user == null)
@@ -83,7 +82,12 @@ namespace Communicator.Services
 				return false;
 			}
 
-			if (!Login(user.Login, oldPassword))
+			var loginReq = new UserLoginRequest
+			{
+				Login = request.Login,
+				Password = request.OldPassword
+			};
+			if (Login(loginReq) == -1)
 			{
 				return false;
 			}
@@ -112,26 +116,27 @@ namespace Communicator.Services
 				}
 			}
 
-			if (request.Password != oldPassword)
+			if (request.NewPassword != request.OldPassword)
 			{
 				int random = new Random().Next();
-				string pw = request.Password + random.ToString();
+				string pw = request.NewPassword + random.ToString();
 				user.PasswordHash = Hash(pw);
 			}
+
+			_context.SaveChanges();
 			return true;
 			
 		}
 
-		public bool Login(string login, string pw)
+		public int Login(UserLoginRequest request)
 		{
-			var user = _context.UserEntity.FirstOrDefault(x => x.Login == login);
+			var user = _context.UserEntity.FirstOrDefault(x => x.Login == request.Login);
 			if (user == null)
 			{
-				return false;
+				return -1;
 			}
 
-			pw += user.Salt;
-			return user.PasswordHash == Hash(pw);
+			return user.PasswordHash == Hash(request.Password += user.Salt) ? user.ID : -1;
 		}
 
 		public UserResponse GetByID(int id)

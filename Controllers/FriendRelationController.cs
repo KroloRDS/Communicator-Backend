@@ -19,46 +19,55 @@ namespace Communicator.Controllers
 
 		[HttpPost]
 		[Route("add")]
-		public IActionResult Add(FriendRelationRequest request)
+		public IActionResult Add(int friendId)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			int? id = HttpContext.Session.GetInt32("userId");
+			if (id == null)
 			{
 				return StatusCode(440);
 			}
-			return _service.Add(request) ? Ok() : BadRequest();
+			return _service.Add(CreateRequest(id, friendId)) ? Ok() : BadRequest();
 		}
 
 		[HttpDelete]
 		[Route("delete")]
-		public IActionResult Delete(FriendRelationRequest request)
+		public IActionResult Delete(int friendId)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			int? id = HttpContext.Session.GetInt32("userId");
+			if (id == null)
 			{
 				return StatusCode(440);
 			}
-			return _service.Delete(request) ? Ok() : BadRequest();
+			return _service.Delete(CreateRequest(id, friendId)) ? Ok() : BadRequest();
 		}
 
 		[HttpPut]
 		[Route("accept")]
-		public IActionResult Accept(FriendRelationRequest request)
+		public IActionResult Accept(int friendId)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			int? id = HttpContext.Session.GetInt32("userId");
+			if (id == null)
 			{
 				return StatusCode(440);
 			}
-			return _service.Accept(request) ? Ok() : BadRequest();
+			return _service.Accept(CreateRequest(id, friendId)) ? Ok() : BadRequest();
 		}
 
 		[HttpGet]
 		[Route("get_friend_list")]
-		public IActionResult GetFriendList(int userId, bool accepted)
+		public IActionResult GetFriendList(bool accepted)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			int? id = HttpContext.Session.GetInt32("userId");
+			return id == null ? StatusCode(440) : Ok(_service.GetFriendList((int)id, accepted));
+		}
+
+		private static FriendRelationRequest CreateRequest(int? userId, int friendId)
+		{
+			return new FriendRelationRequest
 			{
-				return StatusCode(440);
-			}
-			return Ok(_service.GetFriendList(userId, accepted));
+				FriendListOwnerID = (int)userId,
+				FriendID = friendId
+			};
 		}
 	}
 }

@@ -7,11 +7,11 @@ namespace Communicator.Services
 {
 	public interface IMessageService
 	{
-		bool Add(MessageRequest request);
+		bool Add(MessageCreateNewRequest request);
 		bool Delete(int id);
 		bool UpdateSeen(int id);
 		bool UpdateContent(int id, string content);
 		MessageResponse GetByID(int id, bool sender);
-		List<MessageResponse> GetBatch(DateTime time, int userId, int friendId);
+		List<MessageResponse> GetBatch(int userId, MessageGetBatchRequest request);
 	}
 }

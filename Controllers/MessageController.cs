@@ -20,9 +20,9 @@ namespace Communicator.Controllers
 
 		[HttpPost]
 		[Route("add")]
-		public IActionResult Add(MessageRequest request)
+		public IActionResult Add(MessageCreateNewRequest request)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			if (HttpContext.Session.GetInt32("userId") == null)
 			{
 				return StatusCode(440);
 			}
@@ -33,7 +33,7 @@ namespace Communicator.Controllers
 		[Route("delete")]
 		public IActionResult Delete(int id)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			if (HttpContext.Session.GetInt32("userId") == null)
 			{
 				return StatusCode(440);
 			}
@@ -44,7 +44,7 @@ namespace Communicator.Controllers
 		[Route("update_seen")]
 		public IActionResult UpdateSeen(int id)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			if (HttpContext.Session.GetInt32("userId") == null)
 			{
 				return StatusCode(440);
 			}
@@ -55,7 +55,7 @@ namespace Communicator.Controllers
 		[Route("update_content")]
 		public IActionResult UpdateContent(int id, string content)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			if (HttpContext.Session.GetInt32("userId") == null)
 			{
 				return StatusCode(440);
 			}
@@ -64,25 +64,26 @@ namespace Communicator.Controllers
 
 		[HttpGet]
 		[Route("get_by_id")]
-		public IActionResult GetByID(int id, bool sender)
+		public IActionResult GetByID(int id, bool senderContent)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			if (HttpContext.Session.GetInt32("userId") == null)
 			{
 				return StatusCode(440);
 			}
-			var response = _service.GetByID(id, sender);
+			var response = _service.GetByID(id, senderContent);
 			return response != null ? Ok(response) : BadRequest();
 		}
 
 		[HttpGet]
 		[Route("get_batch")]
-		public IActionResult GetBatch(DateTime time, int userId, int friendId)
+		public IActionResult GetBatch(MessageGetBatchRequest request)
 		{
-			if (HttpContext.Session.GetInt32("active") != 1)
+			int? userId = HttpContext.Session.GetInt32("userId");
+			if (userId == null)
 			{
 				return StatusCode(440);
 			}
-			return Ok(_service.GetBatch(time, userId, friendId));
+			return Ok(_service.GetBatch((int)userId, request));
 		}
 	}
 }
