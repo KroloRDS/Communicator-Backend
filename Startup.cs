@@ -22,6 +22,14 @@ namespace Communicator
 
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.AddDistributedMemoryCache();
+
+			services.AddSession(options =>
+			{
+				options.Cookie.HttpOnly = true;
+				options.Cookie.IsEssential = true;
+			});
+
 			services.AddControllers();
 			services.AddScoped<IUserService, UserServiceImpl>();
 			services.AddScoped<IMessageService, MessageSerciveImpl>();
@@ -46,6 +54,8 @@ namespace Communicator
 			app.UseRouting();
 
 			app.UseAuthorization();
+
+			app.UseSession();
 
 			app.UseEndpoints(endpoints =>
 			{

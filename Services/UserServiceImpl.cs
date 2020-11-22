@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Security.Cryptography;
+using System.Text;
+using System.Linq;
 using System;
 
 using Communicator.Repositories;
@@ -26,7 +28,7 @@ namespace Communicator.Services
 				Login = request.Login,
 				Email = request.Email,
 				BankAccount = request.BankAccount,
-				PasswordHash = pw.GetHashCode(),
+				PasswordHash = Hash(pw),
 				Salt = random,
 				PublicKey = "???" //TODO: generate from password = private key
 			});
@@ -47,6 +49,18 @@ namespace Communicator.Services
 			return true;
 		}
 
+		public bool Login(string login, string pw)
+		{
+			var user = _context.UserEntity.FirstOrDefault(x => x.Login == login);
+			if (user == null)
+			{
+				return false;
+			}
+
+			pw += user.Salt;
+			return user.PasswordHash == Hash(pw);
+		}
+
 		public UserResponse GetByID(int id)
 		{
 			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
@@ -65,6 +79,13 @@ namespace Communicator.Services
 				Salt = user.Salt,
 				PublicKey = user.PublicKey
 			};
+		}
+
+		private static string Hash(string value)
+		{
+			byte[] bytes = Encoding.UTF8.GetBytes(value);
+			bytes = SHA512Managed.Create().ComputeHash(bytes);
+			return Encoding.UTF8.GetString(bytes, 0, bytes.Length);
 		}
 	}
 }

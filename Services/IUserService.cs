@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-using Communicator.DTOs;
+﻿using Communicator.DTOs;
 
 namespace Communicator.Services
 {
@@ -8,6 +6,7 @@ namespace Communicator.Services
 	{
 		bool Add(UserRequest request);
 		bool Delete(int id);
+		bool Login(string login, string pw);
 		UserResponse GetByID(int id);
 	}
 }
