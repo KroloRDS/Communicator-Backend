@@ -9,8 +9,9 @@ namespace Communicator.Services
 	{
 		bool Add(MessageRequest request);
 		bool Delete(int id);
-		bool Update(int id);
-		MessageResponse GetMessage(int id, bool sender);
-		List<MessageResponse> GetMessages(DateTime time, int userId, int friendId);
+		bool UpdateSeen(int id);
+		bool UpdateContent(int id, string content);
+		MessageResponse GetByID(int id, bool sender);
+		List<MessageResponse> GetBatch(DateTime time, int userId, int friendId);
 	}
 }

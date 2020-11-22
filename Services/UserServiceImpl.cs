@@ -62,6 +62,66 @@ namespace Communicator.Services
 			return true;
 		}
 
+		public bool UpdateBankAccount(int id, string account)
+		{
+			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
+			if (user == null)
+			{
+				return false;
+			}
+
+			user.BankAccount = account;
+			_context.SaveChanges();
+			return true;
+		}
+
+		public bool UpdateCredentials(int id, UserRequest request, string oldPassword)
+		{
+			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
+			if (user == null)
+			{
+				return false;
+			}
+
+			if (!Login(user.Login, oldPassword))
+			{
+				return false;
+			}
+
+			if (request.Login != user.Login)
+			{
+				if (_context.UserEntity.FirstOrDefault(x => x.Login == request.Login) == null)
+				{
+					user.Login = request.Login;
+				}
+				else
+				{
+					return false;
+				}
+			}
+
+			if (request.Email != user.Email)
+			{
+				if (_context.UserEntity.FirstOrDefault(x => x.Email == request.Email) == null)
+				{
+					user.Email = request.Email;
+				}
+				else
+				{
+					return false;
+				}
+			}
+
+			if (request.Password != oldPassword)
+			{
+				int random = new Random().Next();
+				string pw = request.Password + random.ToString();
+				user.PasswordHash = Hash(pw);
+			}
+			return true;
+			
+		}
+
 		public bool Login(string login, string pw)
 		{
 			var user = _context.UserEntity.FirstOrDefault(x => x.Login == login);

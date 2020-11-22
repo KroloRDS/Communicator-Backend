@@ -18,12 +18,14 @@ namespace Communicator.Controllers
 		}
 
 		[HttpPost]
+		[Route("add")]
 		public IActionResult Add(UserRequest request)
 		{
 			return _service.Add(request) ? Ok() : BadRequest();
 		}
 
 		[HttpDelete]
+		[Route("delete")]
 		public IActionResult Delete(int id)
 		{
 			if (HttpContext.Session.GetInt32("active") != 1)
@@ -33,7 +35,30 @@ namespace Communicator.Controllers
 			return _service.Delete(id) ? Ok() : BadRequest();
 		}
 
+		[HttpPut]
+		[Route("update_bank_account")]
+		public IActionResult UpdateBankAccount(int id, string account)
+		{
+			if (HttpContext.Session.GetInt32("active") != 1)
+			{
+				return StatusCode(440);
+			}
+			return _service.UpdateBankAccount(id, account) ? Ok() : BadRequest();
+		}
+
+		[HttpPut]
+		[Route("update_credentials")]
+		public IActionResult UpdateCredentials(int id, UserRequest request, string oldPassword)
+		{
+			if (HttpContext.Session.GetInt32("active") != 1)
+			{
+				return StatusCode(440);
+			}
+			return _service.UpdateCredentials(id, request, oldPassword) ? Ok() : BadRequest();
+		}
+
 		[HttpGet]
+		[Route("get_by_id")]
 		public IActionResult GetByID(int id)
 		{
 			if (HttpContext.Session.GetInt32("active") != 1)
@@ -45,7 +70,7 @@ namespace Communicator.Controllers
 		}
 
 		[HttpGet]
-		[Route("Login")]
+		[Route("login")]
 		public IActionResult Login(string login, string pw)
 		{
 			if (_service.Login(login, pw))

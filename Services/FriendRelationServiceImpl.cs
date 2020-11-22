@@ -92,7 +92,7 @@ namespace Communicator.Services
 			return true;
 		}
 
-		public List<UserResponse> GetFriends(int userId, bool accepted)
+		public List<UserResponse> GetFriendList(int userId, bool accepted)
 		{
 			List<FriendRelationEntity> friendList = _context.FriendRelationEntity
 				.Where(x => x.FriendListOwnerID == userId && x.Accepted == accepted).ToList();

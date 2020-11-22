@@ -55,7 +55,7 @@ namespace Communicator.Services
 			return true;
 		}
 
-		public bool Update(int id)
+		public bool UpdateSeen(int id)
 		{
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
 			if (message != null)
@@ -68,7 +68,21 @@ namespace Communicator.Services
 			return true;
 		}
 
-		public MessageResponse GetMessage(int id, bool sender)
+		public bool UpdateContent(int id, string content)
+		{
+			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
+			if (message != null)
+			{
+				return false;
+			}
+
+			message.SenderEncryptedContent = content; //TODO: encrypt
+			message.ReceiverEncryptedContent = content; //TODO: encrypt
+			_context.SaveChanges();
+			return true;
+		}
+
+		public MessageResponse GetByID(int id, bool sender)
 		{
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
 			if (message == null)
@@ -89,7 +103,7 @@ namespace Communicator.Services
 			};
 		}
 
-		public List<MessageResponse> GetMessages(DateTime time, int userId, int friendId)
+		public List<MessageResponse> GetBatch(DateTime time, int userId, int friendId)
 		{
 			if (userId == friendId)
 			{

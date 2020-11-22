@@ -9,6 +9,6 @@ namespace Communicator.Services
 		bool Add(FriendRelationRequest request);
 		bool Delete(FriendRelationRequest request);
 		bool Accept(FriendRelationRequest request);
-		List<UserResponse> GetFriends(int userId, bool accepted);
+		List<UserResponse> GetFriendList(int userId, bool accepted);
 	}
 }

@@ -18,6 +18,7 @@ namespace Communicator.Controllers
 		}
 
 		[HttpPost]
+		[Route("add")]
 		public IActionResult Add(FriendRelationRequest request)
 		{
 			if (HttpContext.Session.GetInt32("active") != 1)
@@ -28,6 +29,7 @@ namespace Communicator.Controllers
 		}
 
 		[HttpDelete]
+		[Route("delete")]
 		public IActionResult Delete(FriendRelationRequest request)
 		{
 			if (HttpContext.Session.GetInt32("active") != 1)
@@ -38,6 +40,7 @@ namespace Communicator.Controllers
 		}
 
 		[HttpPut]
+		[Route("accept")]
 		public IActionResult Accept(FriendRelationRequest request)
 		{
 			if (HttpContext.Session.GetInt32("active") != 1)
@@ -48,13 +51,14 @@ namespace Communicator.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult GetFriends(int userId, bool accepted)
+		[Route("get_friend_list")]
+		public IActionResult GetFriendList(int userId, bool accepted)
 		{
 			if (HttpContext.Session.GetInt32("active") != 1)
 			{
 				return StatusCode(440);
 			}
-			return Ok(_service.GetFriends(userId, accepted));
+			return Ok(_service.GetFriendList(userId, accepted));
 		}
 	}
 }
