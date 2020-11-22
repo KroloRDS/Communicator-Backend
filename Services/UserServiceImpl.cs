@@ -3,7 +3,6 @@ using System.Text;
 using System.Linq;
 using System;
 
-using Communicator.Repositories;
 using Communicator.Entities;
 using Communicator.DTOs;
 
@@ -20,6 +19,12 @@ namespace Communicator.Services
 		
 		public bool Add(UserRequest request)
 		{
+			if (_context.UserEntity.FirstOrDefault(x => x.Login == request.Login ||
+			x.Email == request.Email) != null)
+			{
+				return false;
+			}
+
 			int random = new Random().Next();
 			string pw = request.Password + random.ToString();
 
@@ -43,6 +48,14 @@ namespace Communicator.Services
 			{
 				return false;
 			}
+
+			_context.FriendRelationEntity.RemoveRange(
+				_context.FriendRelationEntity.Where(
+					x => x.FriendID == id || x.FriendListOwnerID == id));
+
+			_context.MessageEntity.RemoveRange(
+				_context.MessageEntity.Where(
+					x => x.SenderID == id || x.ReceiverID == id));
 
 			_context.UserEntity.Remove(user);
 			_context.SaveChanges();

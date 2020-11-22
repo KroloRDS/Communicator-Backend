@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 
-using Communicator.Repositories;
 using Communicator.Services;
 
 namespace Communicator
@@ -33,6 +32,7 @@ namespace Communicator
 			services.AddControllers();
 			services.AddScoped<IUserService, UserServiceImpl>();
 			services.AddScoped<IMessageService, MessageSerciveImpl>();
+			services.AddScoped<IFriendRelationService, FriendRelationServiceImpl>();
 			services.AddDbContext<CommunicatorDbContex>(opt => opt.UseSqlServer(GetConnectionString()));
 			services.AddSwaggerGen(c =>
 			{

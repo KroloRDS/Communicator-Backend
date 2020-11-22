@@ -2,7 +2,6 @@
 using System.Linq;
 using System;
 
-using Communicator.Repositories;
 using Communicator.Entities;
 using Communicator.DTOs;
 
@@ -19,6 +18,17 @@ namespace Communicator.Services
 
 		public bool Add(MessageRequest request)
 		{
+			if (request.SenderID == request.ReceiverID)
+			{
+				return false;
+			}
+
+			if (_context.UserEntity.FirstOrDefault(x => x.ID == request.SenderID) == null ||
+			_context.UserEntity.FirstOrDefault(x => x.ID == request.ReceiverID) == null)
+			{
+				return false;
+			}
+
 			_context.MessageEntity.Add(new MessageEntity
 			{
 				SenderID = request.SenderID,
@@ -81,6 +91,11 @@ namespace Communicator.Services
 
 		public List<MessageResponse> GetMessages(DateTime time, int userId, int friendId)
 		{
+			if (userId == friendId)
+			{
+				return null;
+			}
+
 			return _context.MessageEntity
 				.Where(x => ((x.SenderID == userId && x.ReceiverID == friendId) ||
 				(x.ReceiverID == userId && x.SenderID == friendId)) &&
