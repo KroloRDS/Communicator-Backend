@@ -72,7 +72,7 @@ namespace Communicator.Controllers
 			return response != null ? Ok(response) : BadRequest();
 		}
 
-		[HttpGet]
+		[HttpPost]
 		[Route("login")]
 		public IActionResult Login(UserLoginRequest request)
 		{
