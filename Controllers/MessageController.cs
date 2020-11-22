@@ -30,6 +30,12 @@ namespace Communicator.Controllers
 			_service.Delete(id);
 		}
 
+		[HttpPut]
+		public void Update(int id)
+		{
+			_service.Update(id);
+		}
+
 		[HttpGet]
 		public List<MessageResponse> GetMessages(DateTime time, int userId, int friendId)
 		{

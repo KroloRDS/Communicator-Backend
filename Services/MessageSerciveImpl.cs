@@ -42,6 +42,17 @@ namespace Communicator.Services
 			//TODO: return codes
 		}
 
+		public void Update(int id)
+		{
+			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
+			if (message != null)
+			{
+				message.SeenByReceiver = true;
+				_context.SaveChanges();
+			}
+			//TODO: return codes
+		}
+
 		public List<MessageResponse> GetMessages(DateTime time, int userId, int friendId)
 		{
 			return _context.MessageEntity
