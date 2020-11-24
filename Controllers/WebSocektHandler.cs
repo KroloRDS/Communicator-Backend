@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using System.Net.WebSockets;
 using System.Threading;
@@ -14,12 +15,16 @@ namespace Communicator.Controllers
 		private readonly IMessageService _messageService;
 		private readonly IUserService _userService;
 
-		public WebSocketHandler(IFriendRelationService friendRelationService, IMessageService messageService, IUserService userService)
+		public WebSocketHandler(string dbConnectionString)
 		{
-			_friendRelationService = friendRelationService;
-			_messageService = messageService;
-			_userService = userService;
-			//TODO: inject service instances
+			var dbOptions = new DbContextOptionsBuilder<CommunicatorDbContex>()
+				.UseSqlServer(dbConnectionString)
+				.Options;
+
+			var dbContex = new CommunicatorDbContex(dbOptions);
+			_friendRelationService = new FriendRelationServiceImpl(dbContex);
+			_messageService = new MessageSerciveImpl(dbContex);
+			_userService = new UserServiceImpl(dbContex);
 		}
 
 

@@ -1,10 +1,10 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using System.Net.WebSockets;
 
 using Communicator.Controllers;
@@ -18,8 +18,8 @@ namespace Communicator
 
 		public Startup(IConfiguration configuration)
 		{
+			_webSocketHandler = new WebSocketHandler(GetDbConnectionString());
 			Configuration = configuration;
-			_webSocketHandler = new WebSocketHandler(null, null, null);
 		}
 
 		public IConfiguration Configuration { get; }
@@ -38,7 +38,7 @@ namespace Communicator
 			services.AddScoped<IUserService, UserServiceImpl>();
 			services.AddScoped<IMessageService, MessageSerciveImpl>();
 			services.AddScoped<IFriendRelationService, FriendRelationServiceImpl>();
-			services.AddDbContext<CommunicatorDbContex>(opt => opt.UseSqlServer(GetConnectionString()));
+			services.AddDbContext<CommunicatorDbContex>(opt => opt.UseSqlServer(GetDbConnectionString()));
 			services.AddSwaggerGen(c =>
 			{
 				c.SwaggerDoc("v1", new OpenApiInfo { Title = "Communicator", Version = "v1" });
@@ -89,7 +89,7 @@ namespace Communicator
 			});
 		}
 
-		private string GetConnectionString()
+		private string GetDbConnectionString()
 		{
 			return Configuration.GetConnectionString("DefaultConnection") +
 				System.Environment.CurrentDirectory + "\\Database\\db.mdf;";
