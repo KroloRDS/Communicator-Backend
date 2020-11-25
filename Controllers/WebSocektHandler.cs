@@ -54,36 +54,36 @@ namespace Communicator.Controllers
 		private byte[] ProcessRequest(WebSocket webSocket, byte[] bytes)
 		{
 			var json = JObject.Parse(Encoding.UTF8.GetString(bytes));
-			var method = json.Value<string>("method");
-			var request = json.SelectToken("request");
+			var request = json.Value<string>("request");
+			var data = json.SelectToken("data");
 
 			if (webSocketList.ContainsValue(webSocket))
 			{
-				return ProcessLoggedInUserRequest(method, request, webSocket);
+				return ProcessLoggedInUserRequest(request, data, webSocket);
 			}
 
-			switch (method)
+			switch (request)
 			{
-				case "login":
-					int id = _userService.Login(request.ToObject<UserLoginRequest>());
+				case "LogIn":
+					int id = _userService.Login(data.ToObject<UserLoginRequest>());
 					if (id != -1)
 					{
 						webSocketList.Add(id, webSocket);
 						return ToBytes(true);
 					}
 					return ToBytes(false);
-				case "register":
-					return ToBytes(_userService.Add(request.ToObject<UserCreateNewRequest>()));
+				case "Register":
+					return ToBytes(_userService.Add(data.ToObject<UserCreateNewRequest>()));
 				default:
 					return ToBytes(false);
 			}
 		}
 
-		private byte[] ProcessLoggedInUserRequest(string method, JToken request, WebSocket webSocket)
+		private byte[] ProcessLoggedInUserRequest(string request, JToken data, WebSocket webSocket)
 		{
-			switch (method)
+			switch (request)
 			{
-				case "logout":
+				case "LogOut":
 					var item = webSocketList.First(x => x.Value == webSocket);
 					webSocketList.Remove(item.Key);
 					return ToBytes(true);
