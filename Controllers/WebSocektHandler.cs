@@ -64,6 +64,8 @@ namespace Communicator.Controllers
 
 			switch (request)
 			{
+				case "Echo":
+					return ToBytes(data);
 				case "LogIn":
 					int id = _userService.Login(data.ToObject<UserLoginRequest>());
 					if (id != -1)
