@@ -7,19 +7,23 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Net.WebSockets;
 
-using Communicator.Controllers;
+using Communicator.WebSockets;
 using Communicator.Services;
 
 namespace Communicator
 {
 	public class Startup
 	{
-		private readonly WebSocketHandler _webSocketHandler;
+		private IWebSocketHandler _webSocketHandler;
+		private readonly string _dbConnectionString;
 
 		public Startup(IConfiguration configuration)
 		{
-			_webSocketHandler = new WebSocketHandler(GetDbConnectionString());
 			Configuration = configuration;
+			_dbConnectionString = 
+				Configuration.GetConnectionString("ConnectionParams") +
+				System.Environment.CurrentDirectory +
+				Configuration.GetConnectionString("DbFileLocation");
 		}
 
 		public IConfiguration Configuration { get; }
@@ -38,15 +42,18 @@ namespace Communicator
 			services.AddScoped<IUserService, UserServiceImpl>();
 			services.AddScoped<IMessageService, MessageSerciveImpl>();
 			services.AddScoped<IFriendRelationService, FriendRelationServiceImpl>();
-			services.AddDbContext<CommunicatorDbContex>(opt => opt.UseSqlServer(GetDbConnectionString()));
+			services.AddScoped<IWebSocketHandler, WebSocketHandlerImpl>();
+			services.AddDbContext<CommunicatorDbContex>(opt => opt.UseSqlServer(_dbConnectionString));
 			services.AddSwaggerGen(c =>
 			{
 				c.SwaggerDoc("v1", new OpenApiInfo { Title = "Communicator", Version = "v1" });
 			});
 		}
 
-		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IWebSocketHandler webSocketHandler)
 		{
+			_webSocketHandler = webSocketHandler;
+
 			if (env.IsDevelopment())
 			{
 				app.UseDeveloperExceptionPage();
@@ -87,12 +94,6 @@ namespace Communicator
 			{
 				endpoints.MapControllers();
 			});
-		}
-
-		private string GetDbConnectionString()
-		{
-			return Configuration.GetConnectionString("DefaultConnection") +
-				System.Environment.CurrentDirectory + "\\Database\\db.mdf;";
 		}
 	}
 }
