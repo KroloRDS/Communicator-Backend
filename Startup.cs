@@ -70,7 +70,7 @@ namespace Communicator
 					if (context.WebSockets.IsWebSocketRequest)
 					{
 						WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
-						await _webSocketHandler.Handle(context, webSocket);
+						await _webSocketHandler.Handle(webSocket);
 					}
 					else
 					{

@@ -10,5 +10,6 @@ namespace Communicator.Services
 		bool Delete(FriendRelationRequest request);
 		bool Accept(FriendRelationRequest request);
 		List<UserResponse> GetFriendList(int userId, bool accepted);
+		List<int> GetFriendListIDs(int userId, bool accepted);
 	}
 }

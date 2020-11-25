@@ -97,15 +97,19 @@ namespace Communicator.Services
 			List<FriendRelationEntity> friendList = _context.FriendRelationEntity
 				.Where(x => x.FriendListOwnerID == userId && x.Accepted == accepted).ToList();
 
-			var userService = new UserServiceImpl(_context);
-			var users = new List<UserResponse>();
+			return (from friend in friendList
+					select new UserServiceImpl(_context)
+					.GetByID(friend.FriendID))
+					.ToList();
+		}
 
-			foreach (var friend in friendList)
-			{
-				users.Add(userService.GetByID(friend.FriendID));
-			}
+		public List<int> GetFriendListIDs(int userId, bool accepted)
+		{
+			List<FriendRelationEntity> friendList = _context.FriendRelationEntity
+				.Where(x => x.FriendListOwnerID == userId && x.Accepted == accepted).ToList();
 
-			return users;
+			return (from friend in friendList
+					select friend.FriendID).ToList();
 		}
 
 		private List<FriendRelationEntity> FindRelations(FriendRelationRequest request)
