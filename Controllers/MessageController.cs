@@ -21,11 +21,12 @@ namespace Communicator.Controllers
 		[Route("add")]
 		public IActionResult Add(MessageCreateNewRequest request)
 		{
-			if (HttpContext.Session.GetInt32("userId") == null)
+			int? userId = HttpContext.Session.GetInt32("userId");
+			if (userId == null)
 			{
 				return StatusCode(440);
 			}
-			return _service.Add(request) ? Ok() : BadRequest();
+			return _service.Add((int)userId, request) ? Ok() : BadRequest();
 		}
 
 		[HttpDelete]
@@ -63,13 +64,13 @@ namespace Communicator.Controllers
 
 		[HttpGet]
 		[Route("get_by_id")]
-		public IActionResult GetByID(int id, bool senderContent)
+		public IActionResult GetByID(int userId, int messageId)
 		{
 			if (HttpContext.Session.GetInt32("userId") == null)
 			{
 				return StatusCode(440);
 			}
-			var response = _service.GetByID(id, senderContent);
+			var response = _service.GetByID(userId, messageId);
 			return response != null ? Ok(response) : BadRequest();
 		}
 

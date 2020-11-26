@@ -16,14 +16,14 @@ namespace Communicator.Services
 			_context = context;
 		}
 
-		public bool Add(MessageCreateNewRequest request)
+		public bool Add(int userId, MessageCreateNewRequest request)
 		{
-			if (request.SenderID == request.ReceiverID)
+			if (userId == request.ReceiverID)
 			{
 				return false;
 			}
 
-			if (_context.UserEntity.FirstOrDefault(x => x.ID == request.SenderID) == null ||
+			if (_context.UserEntity.FirstOrDefault(x => x.ID == userId) == null ||
 			_context.UserEntity.FirstOrDefault(x => x.ID == request.ReceiverID) == null)
 			{
 				return false;
@@ -31,7 +31,7 @@ namespace Communicator.Services
 
 			_context.MessageEntity.Add(new MessageEntity
 			{
-				SenderID = request.SenderID,
+				SenderID = userId,
 				ReceiverID = request.ReceiverID,
 				SenderEncryptedContent = request.Content, //TODO: encrypt
 				ReceiverEncryptedContent = request.Content, //TODO: encrypt
@@ -82,9 +82,9 @@ namespace Communicator.Services
 			return true;
 		}
 
-		public MessageResponse GetByID(int id, bool sender)
+		public MessageResponse GetByID(int userId, int messageId)
 		{
-			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
+			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == messageId);
 			if (message == null)
 			{
 				return null;
@@ -95,7 +95,7 @@ namespace Communicator.Services
 				ID = message.ID,
 				SenderID = message.SenderID,
 				ReceiverID = message.ReceiverID,
-				Content = sender ?
+				Content = userId == message.SenderID ?
 				message.SenderEncryptedContent :
 				message.ReceiverEncryptedContent,
 				SentDateTime = message.SentDateTime,
