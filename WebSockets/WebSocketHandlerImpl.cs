@@ -69,7 +69,7 @@ namespace Communicator.WebSockets
 						_webSocketList.Add(id, webSocket);
 						return GetResponse(request, true);
 					}
-					return GetResponse(request, "error");
+					return GetResponse(request, false);
 				case "Register":
 					return GetResponse(request, userService.Add(data.ToObject<UserCreateNewRequest>()));
 				default:
@@ -105,7 +105,10 @@ namespace Communicator.WebSockets
 			};
 			if (obj is bool boolean)
 			{
-				json.Add("data", boolean);
+				json.Add("data", new JObject
+				{
+					{ "value", boolean },
+				});
 			}
 			else
 			{
