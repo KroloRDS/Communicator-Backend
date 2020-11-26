@@ -30,7 +30,7 @@ namespace Communicator.WebSockets
 				var getResponse = Task.Run(() => ProcessRequest(webSocket, buffer, db));
 				var response = await getResponse;
 
-				await webSocket.SendAsync(new ArraySegment<byte>(buffer), result.MessageType, result.EndOfMessage, CancellationToken.None);
+				await webSocket.SendAsync(new ArraySegment<byte>(response), result.MessageType, result.EndOfMessage, CancellationToken.None);
 				result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 			}
 			await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
