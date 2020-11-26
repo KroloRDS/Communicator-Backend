@@ -67,13 +67,13 @@ namespace Communicator.WebSockets
 					if (id != -1)
 					{
 						_webSocketList.Add(id, webSocket);
-						return ToBytes(true);
+						return GetResponse(request, true);
 					}
-					return ToBytes(false);
+					return GetResponse(request, "error");
 				case "Register":
-					return ToBytes(userService.Add(data.ToObject<UserCreateNewRequest>()));
+					return GetResponse(request, userService.Add(data.ToObject<UserCreateNewRequest>()));
 				default:
-					return ToBytes(false);
+					return GetResponse(request, false);
 			}
 		}
 
@@ -91,15 +91,27 @@ namespace Communicator.WebSockets
 				case "LogOut":
 					var item = _webSocketList.First(x => x.Value == webSocket);
 					_webSocketList.Remove(item.Key);
-					return ToBytes(true);
+					return GetResponse(request, true);
 				default:
-					return ToBytes(false);
+					return GetResponse(request, false);
 			}
 		}
 
-		private static byte[] ToBytes(Object obj)
+		private static byte[] GetResponse(string requestName, Object obj)
 		{
-			return Encoding.UTF8.GetBytes(JObject.FromObject(obj).ToString());
+			var json = new JObject
+			{
+				{ "request", requestName },
+			};
+			if (obj is bool boolean)
+			{
+				json.Add("data", boolean);
+			}
+			else
+			{
+				json.Add("data", JObject.FromObject(obj));
+			}
+			return Encoding.UTF8.GetBytes(json.ToString());
 		}
 	}
 }
