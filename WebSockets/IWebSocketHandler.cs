@@ -5,6 +5,6 @@ namespace Communicator.WebSockets
 {
 	public interface IWebSocketHandler
 	{
-		Task Handle(WebSocket webSocket);
+		Task Handle(WebSocket webSocket, CommunicatorDbContex db);
 	}
 }

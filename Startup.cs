@@ -50,7 +50,12 @@ namespace Communicator
 			});
 		}
 
-		public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IWebSocketHandler webSocketHandler)
+		public void Configure(
+			IApplicationBuilder app,
+			IWebHostEnvironment env,
+			IWebSocketHandler webSocketHandler,
+			IServiceScopeFactory serviceScopeFactory
+			)
 		{
 			_webSocketHandler = webSocketHandler;
 
@@ -76,8 +81,10 @@ namespace Communicator
 				{
 					if (context.WebSockets.IsWebSocketRequest)
 					{
+						using var scope = serviceScopeFactory.CreateScope();
+						var db = scope.ServiceProvider.GetService<CommunicatorDbContex>();
 						WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
-						await _webSocketHandler.Handle(webSocket);
+						await _webSocketHandler.Handle(webSocket, db);
 					}
 					else
 					{

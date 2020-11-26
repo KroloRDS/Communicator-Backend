@@ -14,26 +14,20 @@ namespace Communicator.WebSockets
 {
 	public class WebSocketHandlerImpl : IWebSocketHandler
 	{
-		private readonly IFriendRelationService _friendRelationService;
-		private readonly IMessageService _messageService;
-		private readonly IUserService _userService;
 		private readonly Dictionary<int, WebSocket> _webSocketList;
 
-		public WebSocketHandlerImpl(IFriendRelationService friendRelationService, IMessageService messageService, IUserService userService)
+		public WebSocketHandlerImpl()
 		{
 			_webSocketList = new Dictionary<int, WebSocket>();
-			_friendRelationService = friendRelationService;
-			_messageService = messageService;
-			_userService = userService;
 		}
 
-		public async Task Handle(WebSocket webSocket)
+		public async Task Handle(WebSocket webSocket, CommunicatorDbContex db)
 		{
 			var buffer = new byte[1024 * 4];
 			WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 			while (!result.CloseStatus.HasValue)
 			{
-				var getResponse = Task.Run(() => ProcessRequest(webSocket, buffer));
+				var getResponse = Task.Run(() => ProcessRequest(webSocket, buffer, db));
 				var response = await getResponse;
 
 				await webSocket.SendAsync(new ArraySegment<byte>(buffer), result.MessageType, result.EndOfMessage, CancellationToken.None);
@@ -42,28 +36,34 @@ namespace Communicator.WebSockets
 			await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
 		}
 
-		private static byte[] ToBytes(Object obj)
+		private byte[] ProcessRequest(WebSocket webSocket, byte[] bytes, CommunicatorDbContex db)
 		{
-			return Encoding.UTF8.GetBytes(JObject.FromObject(obj).ToString());
-		}
+			var friendRelationService = new FriendRelationServiceImpl(db);
+			var messageSercive = new MessageSerciveImpl(db);
+			var userService = new UserServiceImpl(db);
 
-		private byte[] ProcessRequest(WebSocket webSocket, byte[] bytes)
-		{
 			var json = JObject.Parse(Encoding.UTF8.GetString(bytes));
 			var request = json.Value<string>("request");
 			var data = json.SelectToken("data");
 
-			if (_webSocketList.ContainsValue(webSocket))
-			{
-				return ProcessLoggedInUserRequest(request, data, webSocket);
-			}
+			return _webSocketList.ContainsValue(webSocket) ?
+				ProcessLoggedInUserRequest(friendRelationService, messageSercive, userService, request, data, webSocket) :
+				ProcessLoggedOutUserRequest(userService, request, data, webSocket);
+		}
 
+		private byte[] ProcessLoggedOutUserRequest(
+			IUserService userService,
+			string request,
+			JToken data,
+			WebSocket webSocket
+			)
+		{
 			switch (request)
 			{
 				case "Echo":
 					return ToBytes(data);
 				case "LogIn":
-					int id = _userService.Login(data.ToObject<UserLoginRequest>());
+					int id = userService.Login(data.ToObject<UserLoginRequest>());
 					if (id != -1)
 					{
 						_webSocketList.Add(id, webSocket);
@@ -71,13 +71,20 @@ namespace Communicator.WebSockets
 					}
 					return ToBytes(false);
 				case "Register":
-					return ToBytes(_userService.Add(data.ToObject<UserCreateNewRequest>()));
+					return ToBytes(userService.Add(data.ToObject<UserCreateNewRequest>()));
 				default:
 					return ToBytes(false);
 			}
 		}
 
-		private byte[] ProcessLoggedInUserRequest(string request, JToken data, WebSocket webSocket)
+		private byte[] ProcessLoggedInUserRequest(
+			IFriendRelationService friendRelationService,
+			IMessageService messageService,
+			IUserService userService,
+			string request,
+			JToken data,
+			WebSocket webSocket
+			)
 		{
 			switch (request)
 			{
@@ -88,6 +95,11 @@ namespace Communicator.WebSockets
 				default:
 					return ToBytes(false);
 			}
+		}
+
+		private static byte[] ToBytes(Object obj)
+		{
+			return Encoding.UTF8.GetBytes(JObject.FromObject(obj).ToString());
 		}
 	}
 }
