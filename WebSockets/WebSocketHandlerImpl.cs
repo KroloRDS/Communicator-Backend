@@ -61,7 +61,7 @@ namespace Communicator.WebSockets
 			switch (request)
 			{
 				case "Echo":
-					return ToBytes(data);
+					return Encoding.UTF8.GetBytes(data.ToString());
 				case "LogIn":
 					int id = userService.Login(data.ToObject<UserLoginRequest>());
 					if (id != -1)
