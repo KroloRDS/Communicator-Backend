@@ -34,6 +34,7 @@ namespace Communicator.WebSockets
 				result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 			}
 			await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+			_webSocketList.Remove(GetID(webSocket));
 		}
 
 		private byte[] ProcessRequest(WebSocket webSocket, byte[] bytes, CommunicatorDbContex db)
