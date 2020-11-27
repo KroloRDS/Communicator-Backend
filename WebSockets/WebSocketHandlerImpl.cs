@@ -42,7 +42,16 @@ namespace Communicator.WebSockets
 			var messageSercive = new MessageSerciveImpl(db);
 			var userService = new UserServiceImpl(db);
 
-			var json = JObject.Parse(Encoding.UTF8.GetString(bytes));
+			JObject json;
+			try
+			{
+				json = JObject.Parse(Encoding.UTF8.GetString(bytes));
+			}
+			catch
+			{
+				return GetErrorResponse(bytes);
+			}
+			
 			var request = json.Value<string>("request");
 			var data = json.SelectToken("data");
 
@@ -181,6 +190,29 @@ namespace Communicator.WebSockets
 				FriendListOwnerID = userId,
 				FriendID = friendId
 			};
+		}
+
+		private static byte[] GetErrorResponse(byte[] bytes)
+		{
+			var data = Encoding.UTF8.GetString(RemoveTrailingZeros(bytes));
+			var json = new JObject
+			{
+				{ "request", "unknown" },
+				{ "data", "Invalid JSON: " + data },
+			};
+			return Encoding.UTF8.GetBytes(json.ToString());
+		}
+
+		private static byte[] RemoveTrailingZeros(byte[] bytes)
+		{
+			var i = bytes.Length - 1;
+			while (bytes[i] == 0)
+			{
+				--i;
+			}
+			var temp = new byte[i + 1];
+			Array.Copy(bytes, temp, i + 1);
+			return temp;
 		}
 	}
 }
