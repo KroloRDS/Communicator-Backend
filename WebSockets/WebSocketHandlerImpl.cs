@@ -68,6 +68,7 @@ namespace Communicator.WebSockets
 			WebSocket webSocket
 			)
 		{
+			request = request.Substring(0, request.LastIndexOf("Request"));
 			switch (request)
 			{
 				case "Echo":
@@ -99,10 +100,10 @@ namespace Communicator.WebSockets
 					_webSocketList.Remove(userId);
 					return GetResponse(request, true);
 				//FriendList
-				case "SendFriendRequest":
+				case "AddFriend":
 					return GetResponse(request,
 						friendRelationService.Add(CreateRequest(userId, data.ToObject<int>())));
-				case "AcceptFriendRequest":
+				case "AcceptFriend":
 					return GetResponse(request,
 						friendRelationService.Accept(CreateRequest(userId, data.ToObject<int>())));
 				case "RemoveFriend":
@@ -153,17 +154,15 @@ namespace Communicator.WebSockets
 		{
 			var json = new JObject
 			{
-				{ "request", requestName },
+				{ "dataType", requestName + "Response" },
 			};
 			if (obj is bool boolean)
 			{
-				json.Add("data", new JObject
-				{
-					{ "value", boolean },
-				});
+				json.Add("successful", boolean);
 			}
 			else
 			{
+				json.Add("successful", true);
 				json.Add("data", JObject.FromObject(obj));
 			}
 			return Encoding.UTF8.GetBytes(json.ToString());
@@ -198,7 +197,8 @@ namespace Communicator.WebSockets
 			var data = Encoding.UTF8.GetString(RemoveTrailingZeros(bytes));
 			var json = new JObject
 			{
-				{ "request", "unknown" },
+				{ "dataType", "ErrorResponse" },
+				{ "successful", false },
 				{ "data", "Invalid JSON: " + data },
 			};
 			return Encoding.UTF8.GetBytes(json.ToString());
