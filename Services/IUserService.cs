@@ -6,7 +6,7 @@ namespace Communicator.Services
 	{
 		bool Add(UserCreateNewRequest request);
 		bool Delete(int id);
-		int Login(UserLoginRequest request);
+		UserResponse Login(UserLoginRequest request);
 		bool UpdateBankAccount(int id, string account);
 		bool UpdateCredentials(int id, UserUpdateCredentialsRequest request);
 		UserResponse GetByID(int id);

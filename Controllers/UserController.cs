@@ -76,10 +76,10 @@ namespace Communicator.Controllers
 		[Route("login")]
 		public IActionResult Login(UserLoginRequest request)
 		{
-			int id = _service.Login(request);
-			if (id != -1)
+			var user = _service.Login(request);
+			if (user != null)
 			{
-				HttpContext.Session.SetInt32("userId", id);
+				HttpContext.Session.SetInt32("userId", user.ID);
 				return Ok(HttpContext.Session.Id);
 			}
 			return BadRequest();

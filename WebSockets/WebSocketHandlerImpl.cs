@@ -173,12 +173,12 @@ namespace Communicator.WebSockets
 			return _webSocketList.FirstOrDefault(x => x.Value == webSocket).Key;
 		}
 
-		private byte[] Login(string request, WebSocket webSocket, int id)
+		private byte[] Login(string request, WebSocket webSocket, UserResponse user)
 		{
-			if (id != -1)
+			if (user != null)
 			{
-				_webSocketList.Add(id, webSocket);
-				return GetResponse(request, true);
+				_webSocketList.Add(user.ID, webSocket);
+				return GetResponse(request, user);
 			}
 			return GetResponse(request, false);
 		}

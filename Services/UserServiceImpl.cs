@@ -128,15 +128,22 @@ namespace Communicator.Services
 			
 		}
 
-		public int Login(UserLoginRequest request)
+		public UserResponse Login(UserLoginRequest request)
 		{
 			var user = _context.UserEntity.FirstOrDefault(x => x.Login == request.Login);
-			if (user == null)
+			if (user == null || user.PasswordHash != Hash(request.Password += user.Salt))
 			{
-				return -1;
+				return null;
 			}
 
-			return user.PasswordHash == Hash(request.Password += user.Salt) ? user.ID : -1;
+			return new UserResponse
+			{
+				ID = user.ID,
+				Login = user.Login,
+				Email = user.Email,
+				BankAccount = user.BankAccount,
+				PublicKey = user.PublicKey
+			};
 		}
 
 		public UserResponse GetByID(int id)
@@ -153,8 +160,6 @@ namespace Communicator.Services
 				Login = user.Login,
 				Email = user.Email,
 				BankAccount = user.BankAccount,
-				PasswordHash = user.PasswordHash,
-				Salt = user.Salt,
 				PublicKey = user.PublicKey
 			};
 		}
