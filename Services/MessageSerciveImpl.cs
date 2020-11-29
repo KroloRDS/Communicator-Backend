@@ -16,17 +16,20 @@ namespace Communicator.Services
 			_context = context;
 		}
 
-		public bool Add(int userId, MessageCreateNewRequest request)
+		public string Add(int userId, MessageCreateNewRequest request)
 		{
 			if (userId == request.ReceiverID)
 			{
-				return false;
+				return "Cannot send message to yourself";
 			}
 
-			if (_context.UserEntity.FirstOrDefault(x => x.ID == userId) == null ||
-			_context.UserEntity.FirstOrDefault(x => x.ID == request.ReceiverID) == null)
+			if (_context.UserEntity.FirstOrDefault(x => x.ID == userId) == null)
 			{
-				return false;
+				return "Cannot find sender user with ID: " + userId;
+			}
+			if (_context.UserEntity.FirstOrDefault(x => x.ID == request.ReceiverID) == null)
+			{
+				return "Cannot find receiving user with ID: " + request.ReceiverID;
 			}
 
 			_context.MessageEntity.Add(new MessageEntity
@@ -39,47 +42,47 @@ namespace Communicator.Services
 				SeenByReceiver = false
 			});
 			_context.SaveChanges();
-			return true;
+			return "OK";
 		}
 
-		public bool Delete(int id)
+		public string Delete(int id)
 		{
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
 			if (message == null)
 			{
-				return false;
+				return "Cannot find message with ID: " + id;
 			}
 
 			_context.MessageEntity.Remove(message);
 			_context.SaveChanges();
-			return true;
+			return "OK";
 		}
 
-		public bool UpdateSeen(int id)
+		public string UpdateSeen(int id)
 		{
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
-			if (message != null)
+			if (message == null)
 			{
-				return false;
+				return "Cannot find message with ID: " + id;
 			}
 
 			message.SeenByReceiver = true;
 			_context.SaveChanges();
-			return true;
+			return "OK";
 		}
 
-		public bool UpdateContent(int id, string content)
+		public string UpdateContent(int id, string content)
 		{
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
-			if (message != null)
+			if (message == null)
 			{
-				return false;
+				return "Cannot find message with ID: " + id;
 			}
 
 			message.SenderEncryptedContent = content; //TODO: encrypt
 			message.ReceiverEncryptedContent = content; //TODO: encrypt
 			_context.SaveChanges();
-			return true;
+			return "OK";
 		}
 
 		public MessageResponse GetByID(int userId, int messageId)
@@ -107,7 +110,7 @@ namespace Communicator.Services
 		{
 			if (userId == request.FriendID)
 			{
-				return null;
+				return new List<MessageResponse>();
 			}
 
 			return _context.MessageEntity

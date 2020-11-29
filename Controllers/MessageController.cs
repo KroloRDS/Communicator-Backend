@@ -26,7 +26,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.Add((int)userId, request) ? Ok() : BadRequest();
+
+			var response = _service.Add((int)userId, request);
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpDelete]
@@ -37,7 +39,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.Delete(id) ? Ok() : BadRequest();
+
+			var response = _service.Delete(id);
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpPut]
@@ -48,7 +52,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.UpdateSeen(id) ? Ok() : BadRequest();
+
+			var response = _service.UpdateSeen(id);
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpPut]
@@ -59,7 +65,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.UpdateContent(id, content) ? Ok() : BadRequest();
+
+			var response = _service.UpdateContent(id, content);
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpGet]
@@ -70,8 +78,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
+
 			var response = _service.GetByID(userId, messageId);
-			return response != null ? Ok(response) : BadRequest();
+			return response != null ? Ok() : BadRequest();
 		}
 
 		[HttpGet]
@@ -83,6 +92,7 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
+
 			return Ok(_service.GetBatch((int)userId, request));
 		}
 	}

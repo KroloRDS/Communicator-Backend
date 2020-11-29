@@ -6,10 +6,10 @@ namespace Communicator.Services
 {
 	public interface IMessageService
 	{
-		bool Add(int userId, MessageCreateNewRequest request);
-		bool Delete(int id);
-		bool UpdateSeen(int id);
-		bool UpdateContent(int id, string content);
+		string Add(int userId, MessageCreateNewRequest request);
+		string Delete(int id);
+		string UpdateSeen(int id);
+		string UpdateContent(int id, string content);
 		MessageResponse GetByID(int userId, int messageId);
 		List<MessageResponse> GetBatch(int userId, MessageGetBatchRequest request);
 	}

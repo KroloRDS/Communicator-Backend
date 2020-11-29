@@ -21,7 +21,8 @@ namespace Communicator.Controllers
 		[Route("add")]
 		public IActionResult Add(UserCreateNewRequest request)
 		{
-			return _service.Add(request) ? Ok() : BadRequest();
+			var response = _service.Add(request);
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpDelete]
@@ -33,7 +34,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.Delete((int)id) ? Ok() : BadRequest();
+
+			var response = _service.Delete((int)id);
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpPut]
@@ -45,7 +48,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.UpdateBankAccount((int)id, account) ? Ok() : BadRequest();
+
+			var response = _service.UpdateBankAccount((int)id, account);
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpPut]
@@ -57,7 +62,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.UpdateCredentials((int)id, request) ? Ok() : BadRequest();
+
+			var response = _service.UpdateCredentials((int)id, request);
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpGet]
@@ -68,6 +75,7 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
+
 			var response = _service.GetByID(id);
 			return response != null ? Ok(response) : BadRequest();
 		}
@@ -82,6 +90,7 @@ namespace Communicator.Controllers
 				HttpContext.Session.SetInt32("userId", user.ID);
 				return Ok(HttpContext.Session.Id);
 			}
+
 			return BadRequest();
 		}
 	}

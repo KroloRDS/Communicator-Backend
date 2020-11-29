@@ -161,9 +161,10 @@ namespace Communicator.WebSockets
 			{
 				{ "dataType", requestName + "Response" },
 			};
-			if (obj is bool boolean)
+			if (obj is string str)
 			{
-				json.Add("successful", boolean);
+				json.Add("successful", str.Equals("OK"));
+				json.Add("data", str);
 			}
 			else
 			{

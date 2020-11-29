@@ -17,12 +17,15 @@ namespace Communicator.Services
 			_context = context;
 		}
 		
-		public bool Add(UserCreateNewRequest request)
+		public string Add(UserCreateNewRequest request)
 		{
-			if (_context.UserEntity.FirstOrDefault(x => x.Login == request.Login ||
-			x.Email == request.Email) != null)
+			if (_context.UserEntity.FirstOrDefault(x => x.Login == request.Login) != null)
 			{
-				return false;
+				return "User with this login (" + request.Login + ") already exist";
+			}
+			if (_context.UserEntity.FirstOrDefault(x => x.Email == request.Email) != null)
+			{
+				return "User with this e-mail address (" + request.Email + ") already exist";
 			}
 
 			int random = new Random().Next();
@@ -37,15 +40,15 @@ namespace Communicator.Services
 				PublicKey = "???" //TODO: generate from password = private key
 			});
 			_context.SaveChanges();
-			return true;
+			return "OK";
 		}
 
-		public bool Delete(int id)
+		public string Delete(int id)
 		{
 			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
 			if (user == null)
 			{
-				return false;
+				return "Cannot find user with ID: " + id;
 			}
 
 			_context.FriendRelationEntity.RemoveRange(
@@ -58,38 +61,38 @@ namespace Communicator.Services
 
 			_context.UserEntity.Remove(user);
 			_context.SaveChanges();
-			return true;
+			return "OK";
 		}
 
-		public bool UpdateBankAccount(int id, string account)
+		public string UpdateBankAccount(int id, string account)
 		{
 			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
 			if (user == null)
 			{
-				return false;
+				return "Cannot find user with ID: " + id;
 			}
 
 			user.BankAccount = account;
 			_context.SaveChanges();
-			return true;
+			return "OK";
 		}
 
-		public bool UpdateCredentials(int id, UserUpdateCredentialsRequest request)
+		public string UpdateCredentials(int id, UserUpdateCredentialsRequest request)
 		{
 			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
 			if (user == null)
 			{
-				return false;
+				return "Cannot find user with ID: " + id;
 			}
 
 			var loginReq = new UserLoginRequest
 			{
-				Login = request.Login,
+				Login = user.Login,
 				Password = request.OldPassword
 			};
 			if (Login(loginReq) == null)
 			{
-				return false;
+				return "Invalid old password";
 			}
 
 			if (request.Login != user.Login)
@@ -100,7 +103,7 @@ namespace Communicator.Services
 				}
 				else
 				{
-					return false;
+					return "User with this login (" + request.Login + ") already exist";
 				}
 			}
 
@@ -112,7 +115,7 @@ namespace Communicator.Services
 				}
 				else
 				{
-					return false;
+					return "User with this e-mail address (" + request.Email + ") already exist";
 				}
 			}
 
@@ -124,7 +127,7 @@ namespace Communicator.Services
 			}
 
 			_context.SaveChanges();
-			return true;
+			return "OK";
 			
 		}
 

@@ -26,7 +26,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.Add(CreateRequest(id, friendId)) ? Ok() : BadRequest();
+
+			var response = _service.Add(CreateRequest(id, friendId));
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpDelete]
@@ -38,7 +40,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.Delete(CreateRequest(id, friendId)) ? Ok() : BadRequest();
+
+			var response = _service.Delete(CreateRequest(id, friendId));
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpPut]
@@ -50,7 +54,9 @@ namespace Communicator.Controllers
 			{
 				return StatusCode(440);
 			}
-			return _service.Accept(CreateRequest(id, friendId)) ? Ok() : BadRequest();
+
+			var response = _service.Accept(CreateRequest(id, friendId));
+			return response.Equals("OK") ? Ok() : BadRequest(response);
 		}
 
 		[HttpGet]

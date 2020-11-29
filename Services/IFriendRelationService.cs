@@ -6,9 +6,9 @@ namespace Communicator.Services
 {
 	public interface IFriendRelationService
 	{
-		bool Add(FriendRelationRequest request);
-		bool Delete(FriendRelationRequest request);
-		bool Accept(FriendRelationRequest request);
+		string Add(FriendRelationRequest request);
+		string Delete(FriendRelationRequest request);
+		string Accept(FriendRelationRequest request);
 		List<UserResponse> GetFriendList(int userId, bool accepted);
 		List<int> GetFriendListIDs(int userId, bool accepted);
 	}
