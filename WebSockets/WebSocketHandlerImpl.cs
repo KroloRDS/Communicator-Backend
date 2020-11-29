@@ -53,7 +53,7 @@ namespace Communicator.WebSockets
 				return GetErrorResponse(bytes);
 			}
 			
-			var request = json.Value<string>("request");
+			var request = json.Value<string>("dataType");
 			var data = json.SelectToken("data");
 
 			return _webSocketList.ContainsValue(webSocket) ?
