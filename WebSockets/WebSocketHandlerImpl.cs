@@ -52,9 +52,10 @@ namespace Communicator.WebSockets
 			{
 				return GetErrorResponse(bytes);
 			}
-			
-			var request = json.Value<string>("dataType");
+
 			var data = json.SelectToken("data");
+			var request = json.Value<string>("dataType");
+			request = request.Substring(0, request.LastIndexOf("Request"));
 
 			return _webSocketList.ContainsValue(webSocket) ?
 				ProcessLoggedInUserRequest(friendRelationService, messageSercive, userService, request, data, GetID(webSocket)) :
@@ -68,7 +69,6 @@ namespace Communicator.WebSockets
 			WebSocket webSocket
 			)
 		{
-			request = request.Substring(0, request.LastIndexOf("Request"));
 			switch (request)
 			{
 				case "Echo":
