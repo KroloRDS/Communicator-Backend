@@ -102,13 +102,13 @@ namespace Communicator.WebSockets
 				//FriendList
 				case "AddFriend":
 					return GetResponse(request,
-						friendRelationService.Add(CreateRequest(userId, data.ToObject<int>())));
+						friendRelationService.Add(CreateRequest(userId, data.First.ToObject<int>())));
 				case "AcceptFriend":
 					return GetResponse(request,
-						friendRelationService.Accept(CreateRequest(userId, data.ToObject<int>())));
+						friendRelationService.Accept(CreateRequest(userId, data.First.ToObject<int>())));
 				case "RemoveFriend":
 					return GetResponse(request,
-						friendRelationService.Delete(CreateRequest(userId, data.ToObject<int>())));
+						friendRelationService.Delete(CreateRequest(userId, data.First.ToObject<int>())));
 				case "GetFriendList":
 					return GetResponse(request,
 						friendRelationService.GetFriendList(userId, data.ToObject<bool>()));
@@ -118,10 +118,10 @@ namespace Communicator.WebSockets
 						messageService.Add(userId, data.ToObject<MessageCreateNewRequest>()));
 				case "DeleteMessage":
 					return GetResponse(request,
-						messageService.Delete(data.ToObject<int>()));
+						messageService.Delete(data.First.ToObject<int>()));
 				case "SetMessageSeen":
 					return GetResponse(request,
-						messageService.UpdateSeen(data.ToObject<int>()));
+						messageService.UpdateSeen(data.First.ToObject<int>()));
 				case "UpdateMessageContent":
 					return GetResponse(request,
 						messageService.UpdateContent(
@@ -129,8 +129,7 @@ namespace Communicator.WebSockets
 							data.SelectToken("messageContent").ToObject<string>()));
 				case "GetMessage":
 					return GetResponse(request,
-						messageService.GetByID(
-							userId, data.SelectToken("messageId").ToObject<int>()));
+						messageService.GetByID(userId, data.First.ToObject<int>()));
 				case "GetMessagesBatch":
 					return GetResponse(request,
 						messageService.GetBatch(userId, data.ToObject<MessageGetBatchRequest>()));
@@ -139,12 +138,12 @@ namespace Communicator.WebSockets
 					return GetResponse(request, userService.Delete(userId));
 				case "UpdateBankAccount":
 					return GetResponse(request,
-						userService.UpdateBankAccount(userId, data.ToObject<string>()));
+						userService.UpdateBankAccount(userId, data.First.ToObject<string>()));
 				case "UpdateUserCredentials":
 					return GetResponse(request,
 						userService.UpdateCredentials(userId, data.ToObject<UserUpdateCredentialsRequest>()));
 				case "GetUser":
-					return GetResponse(request, userService.GetByID(data.ToObject<int>()));
+					return GetResponse(request, userService.GetByID(data.First.ToObject<int>()));
 				default:
 					return GetResponse(request, false);
 			}
