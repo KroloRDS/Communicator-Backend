@@ -55,10 +55,18 @@ namespace Communicator.Controllers
 
 		[HttpGet]
 		[Route("get_friend_list")]
-		public IActionResult GetFriendList(bool accepted)
+		public IActionResult GetFriendList()
 		{
 			int? id = HttpContext.Session.GetInt32("userId");
-			return id == null ? StatusCode(440) : Ok(_service.GetFriendList((int)id, accepted));
+			return id == null ? StatusCode(440) : Ok(_service.GetFriendList((int)id, true));
+		}
+
+		[HttpGet]
+		[Route("get_pending_friend_list")]
+		public IActionResult GetPendingFriendList()
+		{
+			int? id = HttpContext.Session.GetInt32("userId");
+			return id == null ? StatusCode(440) : Ok(_service.GetFriendList((int)id, false));
 		}
 
 		private static FriendRelationRequest CreateRequest(int? userId, int friendId)

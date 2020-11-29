@@ -111,7 +111,10 @@ namespace Communicator.WebSockets
 						friendRelationService.Delete(CreateRequest(userId, data.First.ToObject<int>())));
 				case "GetFriendList":
 					return GetResponse(request,
-						friendRelationService.GetFriendList(userId, data.ToObject<bool>()));
+						friendRelationService.GetFriendList(userId, true));
+				case "GetPendingFriendList":
+					return GetResponse(request,
+						friendRelationService.GetFriendList(userId, false));
 				//Messages
 				case "SendMessage":
 					return GetResponse(request,
