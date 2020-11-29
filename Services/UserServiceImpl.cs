@@ -87,7 +87,7 @@ namespace Communicator.Services
 				Login = request.Login,
 				Password = request.OldPassword
 			};
-			if (Login(loginReq) == -1)
+			if (Login(loginReq) == null)
 			{
 				return false;
 			}
