@@ -9,6 +9,7 @@ using System;
 
 using Communicator.Services;
 using Communicator.DTOs;
+using System.IO;
 
 namespace Communicator.WebSockets
 {
@@ -197,6 +198,7 @@ namespace Communicator.WebSockets
 		private static byte[] GetErrorResponse(byte[] bytes)
 		{
 			var data = Encoding.UTF8.GetString(RemoveTrailingZeros(bytes));
+			ErrorLog("Invalid JSON", data);
 			var json = new JObject
 			{
 				{ "dataType", "ErrorResponse" },
@@ -216,6 +218,13 @@ namespace Communicator.WebSockets
 			var temp = new byte[i + 1];
 			Array.Copy(bytes, temp, i + 1);
 			return temp;
+		}
+
+		private static void ErrorLog(string message, string data)
+		{
+			var log = DateTime.Now.ToString();
+			log += " " + message + "\n" + data + "\n\n";
+			File.AppendAllText("Logs\\error_log.txt", log);
 		}
 	}
 }
