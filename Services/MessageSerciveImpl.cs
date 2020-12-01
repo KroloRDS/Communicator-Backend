@@ -20,16 +20,16 @@ namespace Communicator.Services
 		{
 			if (userId == request.ReceiverID)
 			{
-				return "Cannot send message to yourself";
+				return ErrorCodes.CANNOT_MESSAGE_YOURSELF;
 			}
 
 			if (_context.UserEntity.FirstOrDefault(x => x.ID == userId) == null)
 			{
-				return "Cannot find sender user with ID: " + userId;
+				return string.Format(ErrorCodes.CANNOT_FIND_USER, userId);
 			}
 			if (_context.UserEntity.FirstOrDefault(x => x.ID == request.ReceiverID) == null)
 			{
-				return "Cannot find receiving user with ID: " + request.ReceiverID;
+				return string.Format(ErrorCodes.CANNOT_FIND_USER, request.ReceiverID);
 			}
 
 			_context.MessageEntity.Add(new MessageEntity
@@ -42,7 +42,7 @@ namespace Communicator.Services
 				SeenByReceiver = false
 			});
 			_context.SaveChanges();
-			return "OK";
+			return ErrorCodes.OK;
 		}
 
 		public string Delete(int id)
@@ -50,12 +50,12 @@ namespace Communicator.Services
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
 			if (message == null)
 			{
-				return "Cannot find message with ID: " + id;
+				return string.Format(ErrorCodes.CANNOT_FIND_MESSAGE, id);
 			}
 
 			_context.MessageEntity.Remove(message);
 			_context.SaveChanges();
-			return "OK";
+			return ErrorCodes.OK;
 		}
 
 		public string UpdateSeen(int id)
@@ -63,12 +63,12 @@ namespace Communicator.Services
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
 			if (message == null)
 			{
-				return "Cannot find message with ID: " + id;
+				return string.Format(ErrorCodes.CANNOT_FIND_MESSAGE, id);
 			}
 
 			message.SeenByReceiver = true;
 			_context.SaveChanges();
-			return "OK";
+			return ErrorCodes.OK;
 		}
 
 		public string UpdateContent(int id, string content)
@@ -76,13 +76,13 @@ namespace Communicator.Services
 			var message = _context.MessageEntity.FirstOrDefault(x => x.ID == id);
 			if (message == null)
 			{
-				return "Cannot find message with ID: " + id;
+				return string.Format(ErrorCodes.CANNOT_FIND_MESSAGE, id);
 			}
 
 			message.SenderEncryptedContent = content; //TODO: encrypt
 			message.ReceiverEncryptedContent = content; //TODO: encrypt
 			_context.SaveChanges();
-			return "OK";
+			return ErrorCodes.OK;
 		}
 
 		public MessageResponse GetByID(int userId, int messageId)

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Net.WebSockets;
@@ -22,13 +23,13 @@ namespace Communicator.WebSockets
 			_webSocketList = new Dictionary<int, WebSocket>();
 		}
 
-		public async Task Handle(WebSocket webSocket, CommunicatorDbContex db)
+		public async Task Handle(ISession session, WebSocket webSocket, CommunicatorDbContex db)
 		{
 			var buffer = new byte[1024 * 4];
 			WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 			while (!result.CloseStatus.HasValue)
 			{
-				var response = await Task.Run(() => ProcessRequest(webSocket, buffer, db));
+				var response = await Task.Run(() => ProcessRequest(session, webSocket, db, buffer));
 				Array.Clear(buffer, 0, buffer.Length);
 
 				await webSocket.SendAsync(new ArraySegment<byte>(response), result.MessageType, result.EndOfMessage, CancellationToken.None);
@@ -38,7 +39,7 @@ namespace Communicator.WebSockets
 			_webSocketList.Remove(GetID(webSocket));
 		}
 
-		private byte[] ProcessRequest(WebSocket webSocket, byte[] bytes, CommunicatorDbContex db)
+		private byte[] ProcessRequest(ISession session, WebSocket webSocket, CommunicatorDbContex db, byte[] bytes)
 		{
 			var friendRelationService = new FriendRelationServiceImpl(db);
 			var messageSercive = new MessageSerciveImpl(db);
@@ -58,99 +59,94 @@ namespace Communicator.WebSockets
 			var request = json.Value<string>("dataType");
 			request = request.Substring(0, request.LastIndexOf("Request"));
 
-			return _webSocketList.ContainsValue(webSocket) ?
-				ProcessLoggedInUserRequest(friendRelationService, messageSercive, userService, request, data, GetID(webSocket)) :
-				ProcessLoggedOutUserRequest(userService, request, data, webSocket);
-		}
-
-		private byte[] ProcessLoggedOutUserRequest(
-			IUserService userService,
-			string request,
-			JToken data,
-			WebSocket webSocket
-			)
-		{
-			switch (request)
+			int? id = session.GetInt32("userId");
+			if (id == null)
 			{
-				case "Echo":
-					return Encoding.UTF8.GetBytes(data.ToString());
-				case "LogIn":
-					return Login(request, webSocket,
-						userService.Login(data.ToObject<UserLoginRequest>()));
-				case "Register":
-					return GetResponse(request,
-						userService.Add(data.ToObject<UserCreateNewRequest>()));
-				default:
-					return GetResponse(request, false);
+				return request.Equals("LogIn") ?
+					Login(session, webSocket, userService, request, data) :
+					ProcessLoggedOutUserRequest(userService, request, data);
 			}
+
+			_webSocketList[(int)id] = webSocket;
+			return request.Equals("LogOut") ?
+				Logout(session, request, (int)id) :
+				ProcessLoggedInUserRequest(friendRelationService, messageSercive, userService, request, data, (int)id);
 		}
 
-		private byte[] ProcessLoggedInUserRequest(
-			IFriendRelationService friendRelationService,
-			IMessageService messageService,
-			IUserService userService,
-			string request,
-			JToken data,
-			int userId
-			)
+		private byte[] Login(ISession session, WebSocket webSocket, IUserService userService, string request, JToken data)
 		{
-			switch (request)
+			var user = userService.Login(data.ToObject<UserLoginRequest>());
+			if (user == null)
+			{
+				return GetResponse(request, "Incorrect login or password");
+			}
+
+			_webSocketList[user.ID] = webSocket;
+			session.SetInt32("userId", user.ID);
+			return GetResponse(request, user);
+		}
+
+		private byte[] Logout(ISession session, string request, int id)
+		{
+			session.Clear();
+			_webSocketList.Remove(id);
+			return GetResponse(request, ErrorCodes.OK);
+		}
+
+		private static byte[] ProcessLoggedOutUserRequest(IUserService userService, string request, JToken data)
+		{
+			return request switch
+			{
+				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
+				"IsLoggedInRequest" => GetResponse(request, ErrorCodes.NOT_LOGGED_IN),
+				"Register" => GetResponse(request, userService.Add(data.ToObject<UserCreateNewRequest>())),
+				_ => GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request)),
+			};
+		}
+
+		private static byte[] ProcessLoggedInUserRequest(
+			IFriendRelationService friendRelationService, IMessageService messageService, IUserService userService,
+			string request, JToken data, int userId)
+		{
+			return request switch
 			{
 				//General
-				case "LogOut":
-					_webSocketList.Remove(userId);
-					return GetResponse(request, true);
+				"IsLoggedInRequest" => GetResponse(request, ErrorCodes.OK),
 				//FriendList
-				case "AddFriend":
-					return GetResponse(request,
-						friendRelationService.Add(CreateRequest(userId, data.First.ToObject<int>())));
-				case "AcceptFriend":
-					return GetResponse(request,
-						friendRelationService.Accept(CreateRequest(userId, data.First.ToObject<int>())));
-				case "RemoveFriend":
-					return GetResponse(request,
-						friendRelationService.Delete(CreateRequest(userId, data.First.ToObject<int>())));
-				case "GetFriendList":
-					return GetResponse(request,
-						friendRelationService.GetFriendList(userId, true));
-				case "GetPendingFriendList":
-					return GetResponse(request,
-						friendRelationService.GetFriendList(userId, false));
+				"AddFriend" => GetResponse(request, friendRelationService.Add(
+					CreateRequest(userId, data.First.ToObject<int>()))),
+				"AcceptFriend" => GetResponse(request, friendRelationService.Accept(
+					CreateRequest(userId, data.First.ToObject<int>()))),
+				"RemoveFriend" => GetResponse(request, friendRelationService.Delete(
+					CreateRequest(userId, data.First.ToObject<int>()))),
+				"GetFriendList" => GetResponse(request, friendRelationService.GetFriendList(
+					userId, true)),
+				"GetPendingFriendList" => GetResponse(request, friendRelationService.GetFriendList(
+					userId, false)),
 				//Messages
-				case "SendMessage":
-					return GetResponse(request,
-						messageService.Add(userId, data.ToObject<MessageCreateNewRequest>()));
-				case "DeleteMessage":
-					return GetResponse(request,
-						messageService.Delete(data.First.ToObject<int>()));
-				case "SetMessageSeen":
-					return GetResponse(request,
-						messageService.UpdateSeen(data.First.ToObject<int>()));
-				case "UpdateMessageContent":
-					return GetResponse(request,
-						messageService.UpdateContent(
-							data.SelectToken("messageId").ToObject<int>(),
-							data.SelectToken("messageContent").ToObject<string>()));
-				case "GetMessage":
-					return GetResponse(request,
-						messageService.GetByID(userId, data.First.ToObject<int>()));
-				case "GetMessagesBatch":
-					return GetResponse(request,
-						messageService.GetBatch(userId, data.ToObject<MessageGetBatchRequest>()));
+				"SendMessage" => GetResponse(request, messageService.Add(
+					userId, data.ToObject<MessageCreateNewRequest>())),
+				"DeleteMessage" => GetResponse(request, messageService.Delete(
+					data.First.ToObject<int>())),
+				"SetMessageSeen" => GetResponse(request, messageService.UpdateSeen(
+					data.First.ToObject<int>())),
+				"UpdateMessageContent" => GetResponse(request, messageService.UpdateContent(
+					data.SelectToken("messageId").ToObject<int>(),
+					data.SelectToken("messageContent").ToObject<string>())),
+				"GetMessage" => GetResponse(request, messageService.GetByID(
+					userId, data.First.ToObject<int>())),
+				"GetMessagesBatch" => GetResponse(request, messageService.GetBatch(
+					userId, data.ToObject<MessageGetBatchRequest>())),
 				//User
-				case "DeleteUser":
-					return GetResponse(request, userService.Delete(userId));
-				case "UpdateBankAccount":
-					return GetResponse(request,
-						userService.UpdateBankAccount(userId, data.First.ToObject<string>()));
-				case "UpdateUserCredentials":
-					return GetResponse(request,
-						userService.UpdateCredentials(userId, data.ToObject<UserUpdateCredentialsRequest>()));
-				case "GetUser":
-					return GetResponse(request, userService.GetByID(data.First.ToObject<int>()));
-				default:
-					return GetResponse(request, false);
-			}
+				"DeleteUser" => GetResponse(request, userService.Delete(userId)),
+				"UpdateBankAccount" => GetResponse(request, userService.UpdateBankAccount(
+					userId, data.First.ToObject<string>())),
+				"UpdateUserCredentials" => GetResponse(request, userService.UpdateCredentials(
+					userId, data.ToObject<UserUpdateCredentialsRequest>())),
+				"GetUser" => GetResponse(request, userService.GetByID(
+					data.First.ToObject<int>())),
+				_ => GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request)),
+			};
 		}
 
 		private static byte[] GetResponse(string requestName, Object obj)
@@ -161,7 +157,7 @@ namespace Communicator.WebSockets
 			};
 			if (obj is string str)
 			{
-				json.Add("successful", str.Equals("OK"));
+				json.Add("successful", str.Equals(ErrorCodes.OK));
 				json.Add("data", str);
 			}
 			else
@@ -169,32 +165,7 @@ namespace Communicator.WebSockets
 				json.Add("successful", true);
 				json.Add("data", JToken.FromObject(obj));
 			}
-			ErrorLog("test", json.ToString());
 			return Encoding.UTF8.GetBytes(json.ToString());
-		}
-
-		private int GetID(WebSocket webSocket)
-		{
-			return _webSocketList.FirstOrDefault(x => x.Value == webSocket).Key;
-		}
-
-		private byte[] Login(string request, WebSocket webSocket, UserResponse user)
-		{
-			if (user != null)
-			{
-				_webSocketList.Add(user.ID, webSocket);
-				return GetResponse(request, user);
-			}
-			return GetResponse(request, false);
-		}
-
-		private static FriendRelationRequest CreateRequest(int userId, int friendId)
-		{
-			return new FriendRelationRequest
-			{
-				FriendListOwnerID = userId,
-				FriendID = friendId
-			};
 		}
 
 		private static byte[] GetErrorResponse(byte[] bytes)
@@ -227,6 +198,20 @@ namespace Communicator.WebSockets
 			var log = DateTime.Now.ToString();
 			log += " " + message + "\n" + data + "\n\n";
 			File.AppendAllText("Logs\\error_log.txt", log);
+		}
+
+		private int GetID(WebSocket webSocket)
+		{
+			return _webSocketList.FirstOrDefault(x => x.Value == webSocket).Key;
+		}
+
+		private static FriendRelationRequest CreateRequest(int userId, int friendId)
+		{
+			return new FriendRelationRequest
+			{
+				FriendListOwnerID = userId,
+				FriendID = friendId
+			};
 		}
 	}
 }

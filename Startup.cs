@@ -84,7 +84,7 @@ namespace Communicator
 						using var scope = serviceScopeFactory.CreateScope();
 						var db = scope.ServiceProvider.GetService<CommunicatorDbContex>();
 						WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
-						await _webSocketHandler.Handle(webSocket, db);
+						await _webSocketHandler.Handle(context.Session, webSocket, db);
 					}
 					else
 					{
