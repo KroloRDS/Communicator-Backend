@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Net.WebSockets;
 using System.Threading;
@@ -6,9 +7,6 @@ using System.Text;
 using System.Linq;
 using System.IO;
 using System;
-
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 
 using Communicator.Services;
 using Communicator.DTOs;
@@ -169,7 +167,7 @@ namespace Communicator.WebSockets
 			else
 			{
 				json.Add("successful", true);
-				json.Add("data", JsonConvert.SerializeObject(obj));
+				json.Add("data", JToken.FromObject(obj));
 			}
 			ErrorLog("test", json.ToString());
 			return Encoding.UTF8.GetBytes(json.ToString());
