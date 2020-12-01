@@ -149,6 +149,35 @@ namespace Communicator.WebSockets
 			};
 		}
 
+		private void SendRequests(List<int> idList, string requestName, int? paramId = null)
+		{
+			//TODO: UpdateMessages(userId), UpdateUserData(userId), UpdateFriendList(), UpdatePendingFriendList()
+			foreach (int id in idList)
+			{
+				if (_webSocketList.ContainsKey(id))
+				{
+					_webSocketList[id].SendAsync(GetRequest(requestName, paramId),
+						WebSocketMessageType.Binary, true, CancellationToken.None);
+				}
+			}
+		}
+
+		private static byte[] GetRequest(string requestName, int? paramId = null)
+		{
+			var json = new JObject
+			{
+				{ "dataType", requestName + "Response" },
+			};
+			if (paramId != null)
+			{
+				json.Add("data", new JObject
+				{
+					{ "id", paramId },
+				});
+			}
+			return Encoding.UTF8.GetBytes(json.ToString());
+		}
+
 		private static byte[] GetResponse(string requestName, Object obj)
 		{
 			var json = new JObject
