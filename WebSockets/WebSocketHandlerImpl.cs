@@ -100,7 +100,7 @@ namespace Communicator.WebSockets
 				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
 				"IsLoggedInRequest" => GetResponse(request, ErrorCodes.NOT_LOGGED_IN),
 				"Register" => GetResponse(request, userService.Add(data.ToObject<UserCreateNewRequest>())),
-				_ => GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request)),
+				_ => GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST_OR_UNAUTHORIZED, request)),
 			};
 		}
 
@@ -111,7 +111,9 @@ namespace Communicator.WebSockets
 			return request switch
 			{
 				//General
+				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
 				"IsLoggedInRequest" => GetResponse(request, ErrorCodes.OK),
+				"Register" => GetResponse(request, ErrorCodes.REGISTER_WHILE_LOGGED_IN),
 				//FriendList
 				"AddFriend" => GetResponse(request, friendRelationService.Add(
 					CreateRequest(userId, data.First.ToObject<int>()))),
