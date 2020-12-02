@@ -93,5 +93,13 @@ namespace Communicator.Controllers
 
 			return BadRequest();
 		}
+
+		[HttpGet]
+		[Route("is_logged_in")]
+		public IActionResult IsLoggedIn()
+		{
+			return HttpContext.Session.GetInt32("userId") == null ?
+				BadRequest() : Ok(HttpContext.Session.Id);
+		}
 	}
 }
