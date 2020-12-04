@@ -88,7 +88,7 @@ namespace Communicator.Controllers
 			if (user != null)
 			{
 				HttpContext.Session.SetInt32("userId", user.ID);
-				return Ok(HttpContext.Session.Id);
+				return Ok(user);
 			}
 
 			return BadRequest();
@@ -98,8 +98,8 @@ namespace Communicator.Controllers
 		[Route("is_logged_in")]
 		public IActionResult IsLoggedIn()
 		{
-			return HttpContext.Session.GetInt32("userId") == null ?
-				BadRequest() : Ok(HttpContext.Session.Id);
+			int? id = HttpContext.Session.GetInt32("userId");
+			return id == null ? BadRequest() : GetByID((int)id);
 		}
 	}
 }
