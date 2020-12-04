@@ -95,15 +95,27 @@ namespace Communicator.Services
 			return ErrorCodes.OK;
 		}
 
-		public List<UserResponse> GetFriendList(int userId, bool accepted)
+		public List<UserWithLastMessageResponse> GetFriendList(int userId, bool accepted)
 		{
 			List<FriendRelationEntity> friendList = _context.FriendRelationEntity
 				.Where(x => x.FriendListOwnerID == userId && x.Accepted == accepted).ToList();
 
-			return (from friend in friendList
-					select new UserServiceImpl(_context)
-					.GetByID(friend.FriendID))
-					.ToList();
+			var userList =
+				(from friend in friendList
+				 select new UserServiceImpl(_context)
+				 .GetByID(friend.FriendID))
+				 .ToList();
+			
+			return userList.Select(x => new UserWithLastMessageResponse
+			{
+				BankAccount = x.BankAccount,
+				Email = x.Email,
+				ID = x.ID,
+				Login = x.Login,
+				PublicKey = x.PublicKey,
+				LastMessage = 
+				new MessageSerciveImpl(_context).GetLastMessage(userId, x.ID)
+			}).ToList();
 		}
 
 		public List<int> GetFriendListIDs(int userId, bool accepted)

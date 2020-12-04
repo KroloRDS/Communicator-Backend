@@ -62,28 +62,13 @@ namespace Communicator.WebSockets
 			int? id = session.GetInt32("userId");
 			if (id == null)
 			{
-				return request.Equals("LogIn") ?
-					Login(session, webSocket, userService, request, data) :
-					ProcessLoggedOutUserRequest(userService, request, data);
+				return ProcessLoggedOutUserRequest(userService, request, data);
 			}
 
 			_webSocketList[(int)id] = webSocket;
 			return request.Equals("LogOut") ?
 				Logout(session, request, (int)id) :
 				ProcessLoggedInUserRequest(friendRelationService, messageSercive, userService, request, data, (int)id);
-		}
-
-		private byte[] Login(ISession session, WebSocket webSocket, IUserService userService, string request, JToken data)
-		{
-			var user = userService.Login(data.ToObject<UserLoginRequest>());
-			if (user == null)
-			{
-				return GetResponse(request, "Incorrect login or password");
-			}
-
-			_webSocketList[user.ID] = webSocket;
-			session.SetInt32("userId", user.ID);
-			return GetResponse(request, user);
 		}
 
 		private byte[] Logout(ISession session, string request, int id)
@@ -124,7 +109,7 @@ namespace Communicator.WebSockets
 				"GetFriendList" => GetResponse(request, friendRelationService.GetFriendList(
 					userId, true)),
 				"GetPendingFriendList" => GetResponse(request, friendRelationService.GetFriendList(
-					userId, false)),
+					userId, true)),
 				//Messages
 				"SendMessage" => GetResponse(request, messageService.Add(
 					userId, data.ToObject<MessageCreateNewRequest>())),

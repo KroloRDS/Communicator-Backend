@@ -118,7 +118,7 @@ namespace Communicator.Services
 				(x.ReceiverID == userId && x.SenderID == request.FriendID)) &&
 				x.SentDateTime < request.Timestamp)
 				.OrderBy(x => x.SentDateTime)
-				.Take(50)
+				.Take(request.Amount)
 				.Select(x => new MessageResponse
 				{
 					ID = x.ID,
@@ -130,6 +130,17 @@ namespace Communicator.Services
 					SentDateTime = x.SentDateTime,
 					SeenByReceiver = x.SeenByReceiver
 				}).ToList();
+		}
+
+		public MessageResponse GetLastMessage(int userId, int friendId)
+		{
+			var list = GetBatch(userId, new MessageGetBatchRequest
+			{
+				Amount = 1,
+				FriendID = friendId,
+				Timestamp = DateTime.UtcNow,
+			});
+			return list.Count == 1 ? list.First() : null;
 		}
 	}
 }

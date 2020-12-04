@@ -9,7 +9,7 @@ namespace Communicator.Services
 		string Add(FriendRelationRequest request);
 		string Delete(FriendRelationRequest request);
 		string Accept(FriendRelationRequest request);
-		List<UserResponse> GetFriendList(int userId, bool accepted);
+		List<UserWithLastMessageResponse> GetFriendList(int userId, bool accepted);
 		List<int> GetFriendListIDs(int userId, bool accepted);
 	}
 }
