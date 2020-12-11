@@ -43,6 +43,7 @@ namespace Communicator.WebSockets
 		{
 			var friendRelationService = new FriendRelationServiceImpl(db);
 			var messageSercive = new MessageSerciveImpl(db);
+			var paymentService = new PaymentServiceImpl(db);
 			var userService = new UserServiceImpl(db);
 
 			JObject json;
@@ -68,7 +69,7 @@ namespace Communicator.WebSockets
 			_webSocketList[(int)id] = webSocket;
 			return request.Equals("LogOut") ?
 				Logout(session, request, (int)id) :
-				ProcessLoggedInUserRequest(friendRelationService, messageSercive, userService, request, data, (int)id);
+				ProcessLoggedInUserRequest(friendRelationService, messageSercive, paymentService, userService, request, data, (int)id);
 		}
 
 		private byte[] Logout(ISession session, string request, int id)
@@ -90,7 +91,7 @@ namespace Communicator.WebSockets
 		}
 
 		private static byte[] ProcessLoggedInUserRequest(
-			IFriendRelationService friendRelationService, IMessageService messageService, IUserService userService,
+			IFriendRelationService friendRelationService, IMessageService messageService, IPaymentService paymentService, IUserService userService,
 			string request, JToken data, int userId)
 		{
 			return request switch
@@ -124,6 +125,8 @@ namespace Communicator.WebSockets
 					userId, data.First.ToObject<int>())),
 				"GetMessagesBatch" => GetResponse(request, messageService.GetBatch(
 					userId, data.ToObject<MessageGetBatchRequest>())),
+				//Payment
+				"MakePayment" => MakePayment(paymentService, request, data, userId),
 				//User
 				"DeleteUser" => GetResponse(request, userService.Delete(userId)),
 				"UpdateBankAccount" => GetResponse(request, userService.UpdateBankAccount(
@@ -134,6 +137,30 @@ namespace Communicator.WebSockets
 					data.First.ToObject<int>())),
 				_ => GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request)),
 			};
+		}
+
+		private static byte[] MakePayment(IPaymentService paymentService, string requestName, JToken data, int userId)
+		{
+			var card = data.SelectToken("card");
+			var request = new PaymentRequest
+			{
+				Amount = data.Value<float>("amount"),
+				CardCode = card.Value<int>("cvv"),
+				CardNumber = card.Value<int>("number"),
+				ExpirationDate = card.Value<string>("expirationDate")
+			};
+
+			var response = paymentService.Add(userId, request);
+
+			if (!response.Response.Equals(ErrorCodes.OK))
+			{
+				return GetResponse(requestName, response);
+			}
+
+			//Send request to authorize.net
+			bool authorized = true;
+
+			return GetResponse(requestName, paymentService.UpdateStatus(response.ID, authorized));
 		}
 
 		private void SendRequests(List<int> idList, string requestName, int? paramId = null)

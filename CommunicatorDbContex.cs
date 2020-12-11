@@ -20,5 +20,6 @@ namespace Communicator
 		public DbSet<UserEntity> UserEntity { get; set; }
 		public DbSet<MessageEntity> MessageEntity { get; set; }
 		public DbSet<FriendRelationEntity> FriendRelationEntity { get; set; }
+		public DbSet<PaymentEntity> PaymentEntity { get; set; }
 	}
 }
