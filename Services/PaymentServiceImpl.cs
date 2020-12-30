@@ -18,13 +18,6 @@ namespace Communicator.Services
 
 		public PaymentResponse Add(int userId, PaymentRequest request)
 		{
-			if (request.Amount <= 0)
-			{
-				return new PaymentResponse{ Response = ErrorCodes.PAYMENT_AMOUNT_NOT_POSITIVE };
-			}
-
-			//Add other checks here
-
 			var payment = new PaymentEntity
 			{
 				Amount = request.Amount,

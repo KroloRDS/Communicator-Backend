@@ -18,6 +18,5 @@
 		public static readonly string CANNOT_FIND_REQUEST_OR_UNAUTHORIZED = "Request \"{0}\" requires user to be logged in or it does not exist";
 		public static readonly string NOT_LOGGED_IN = "User is not logged in";
 		public static readonly string REGISTER_WHILE_LOGGED_IN = "Cannot register new account while being logged in";
-		public static readonly string PAYMENT_AMOUNT_NOT_POSITIVE = "Payment above must be greater than zero";
 	}
 }
