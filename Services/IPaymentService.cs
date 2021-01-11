@@ -6,5 +6,6 @@ namespace Communicator.Services
 	{
 		PaymentResponse Add(int userId, PaymentRequest request);
 		string UpdateStatus(int id, bool status);
+		string SendAuthorizeNetRequest(PaymentRequest request);
 	}
 }
