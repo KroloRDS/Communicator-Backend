@@ -169,7 +169,7 @@ namespace Communicator.WebSockets
 
 				//Payment
 				case "MakePayment":
-					return MakePayment(paymentService, request, data, userId);
+					return paymentService.MakePayment(request, data, userId);
 
 				//User
 				case "DeleteUser":
@@ -192,33 +192,6 @@ namespace Communicator.WebSockets
 				default:
 					return JsonHandler.GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request));
 			};
-		}
-
-		private static byte[] MakePayment(IPaymentService paymentService, string requestName, JToken data, int userId)
-		{
-			var card = data.SelectToken("card");
-			var request = new PaymentRequest
-			{
-				Amount = data.Value<float>("amount"),
-				CardCode = card.Value<int>("cvv"),
-				CardNumber = card.Value<int>("number"),
-				ExpirationDate = card.Value<string>("expirationDate")
-			};
-
-			var response = paymentService.Add(userId, request);
-
-			if (!response.Response.Equals(ErrorCodes.OK))
-			{
-				return JsonHandler.GetResponse(requestName, response);
-			}
-
-			var authorizeNetResponse = paymentService.SendAuthorizeNetRequest(request);
-			if (!authorizeNetResponse.Equals(ErrorCodes.OK))
-			{
-				paymentService.UpdateStatus(response.ID, false);
-				return JsonHandler.GetResponse(requestName, authorizeNetResponse);
-			}
-			return JsonHandler.GetResponse(requestName, paymentService.UpdateStatus(response.ID, true));
 		}
 
 		private void SendNotification(int id, string requestName, int? paramId = null)

@@ -1,11 +1,11 @@
-﻿using Communicator.DTOs;
+﻿using Newtonsoft.Json.Linq;
+
+using Communicator.DTOs;
 
 namespace Communicator.Services
 {
 	public interface IPaymentService
 	{
-		PaymentResponse Add(int userId, PaymentRequest request);
-		string UpdateStatus(int id, bool status);
-		string SendAuthorizeNetRequest(PaymentRequest request);
+		byte[] MakePayment(string requestName, JToken data, int userId);
 	}
 }

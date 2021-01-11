@@ -4,6 +4,7 @@ using System.Net;
 using System.IO;
 using System;
 
+using Communicator.WebSockets;
 using Communicator.Entities;
 using Communicator.DTOs;
 
@@ -19,7 +20,34 @@ namespace Communicator.Services
 			_context = context;
 		}
 
-		public PaymentResponse Add(int userId, PaymentRequest request)
+		public byte[] MakePayment(string requestName, JToken data, int userId)
+		{
+			var card = data.SelectToken("card");
+			var request = new PaymentRequest
+			{
+				Amount = data.Value<float>("amount"),
+				CardCode = card.Value<int>("cvv"),
+				CardNumber = card.Value<int>("number"),
+				ExpirationDate = card.Value<string>("expirationDate")
+			};
+
+			var response = AddPayment(userId, request);
+
+			if (!response.Response.Equals(ErrorCodes.OK))
+			{
+				return JsonHandler.GetResponse(requestName, response);
+			}
+
+			var authorizeNetResponse = SendAuthorizeNetRequest(request);
+			if (!authorizeNetResponse.Equals(ErrorCodes.OK))
+			{
+				UpdateStatus(response.ID, false);
+				return JsonHandler.GetResponse(requestName, authorizeNetResponse);
+			}
+			return JsonHandler.GetResponse(requestName, UpdateStatus(response.ID, true));
+		}
+
+		private PaymentResponse AddPayment(int userId, PaymentRequest request)
 		{
 			var payment = new PaymentEntity
 			{
@@ -40,7 +68,7 @@ namespace Communicator.Services
 			};
 		}
 
-		public string UpdateStatus(int id, bool status)
+		private string UpdateStatus(int id, bool status)
 		{
 			var payment = _context.PaymentEntity.FirstOrDefault(x => x.ID == id);
 			if (payment == null)
@@ -53,7 +81,7 @@ namespace Communicator.Services
 			return ErrorCodes.OK;
 		}
 
-		public string SendAuthorizeNetRequest(PaymentRequest request)
+		private static string SendAuthorizeNetRequest(PaymentRequest request)
 		{
 			var httpWebRequest = (HttpWebRequest)WebRequest.Create("https://apitest.authorize.net/xml/v1/request.api");
 			httpWebRequest.ContentType = "application/json";
