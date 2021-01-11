@@ -6,8 +6,6 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Text;
 using System.Linq;
-using System.Net;
-using System.IO;
 using System;
 
 using Communicator.Services;
@@ -37,7 +35,7 @@ namespace Communicator.WebSockets
 				result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 			}
 			await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
-			_webSocketList.Remove(GetID(webSocket));
+			_webSocketList.Remove(_webSocketList.FirstOrDefault(x => x.Value == webSocket).Key);
 		}
 
 		private byte[] ProcessRequest(ISession session, WebSocket webSocket, CommunicatorDbContex db, byte[] bytes)
@@ -54,7 +52,7 @@ namespace Communicator.WebSockets
 			}
 			catch
 			{
-				return GetErrorResponse(bytes);
+				return JsonHandler.GetErrorResponse(bytes);
 			}
 
 			var data = json.SelectToken("data");
@@ -77,7 +75,7 @@ namespace Communicator.WebSockets
 		{
 			session.Clear();
 			_webSocketList.Remove(id);
-			return GetResponse(request, ErrorCodes.OK);
+			return JsonHandler.GetResponse(request, ErrorCodes.OK);
 		}
 
 		private static byte[] ProcessLoggedOutUserRequest(IUserService userService, string request, JToken data)
@@ -85,9 +83,9 @@ namespace Communicator.WebSockets
 			return request switch
 			{
 				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
-				"IsLoggedInRequest" => GetResponse(request, ErrorCodes.NOT_LOGGED_IN),
-				"Register" => GetResponse(request, userService.Add(data.ToObject<UserCreateNewRequest>())),
-				_ => GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST_OR_UNAUTHORIZED, request)),
+				"IsLoggedInRequest" => JsonHandler.GetResponse(request, ErrorCodes.NOT_LOGGED_IN),
+				"Register" => JsonHandler.GetResponse(request, userService.Add(data.ToObject<UserCreateNewRequest>())),
+				_ => JsonHandler.GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST_OR_UNAUTHORIZED, request)),
 			};
 		}
 
@@ -102,71 +100,71 @@ namespace Communicator.WebSockets
 					return Encoding.UTF8.GetBytes(data.ToString());
 
 				case "IsLoggedInRequest":
-					return GetResponse(request, ErrorCodes.OK);
+					return JsonHandler.GetResponse(request, ErrorCodes.OK);
 
 				case "Register":
-					return GetResponse(request, ErrorCodes.REGISTER_WHILE_LOGGED_IN);
+					return JsonHandler.GetResponse(request, ErrorCodes.REGISTER_WHILE_LOGGED_IN);
 
 				//FriendList
 				case "AddFriend":
 					var friendId = data.First.ToObject<int>();
 					SendNotification(friendId, "PendingFriendList");
 
-					return GetResponse(request, friendRelationService.Add(CreateRequest(userId, friendId)));
+					return JsonHandler.GetResponse(request, friendRelationService.Add(CreateRequest(userId, friendId)));
 
 				case "AcceptFriend":
 					friendId = data.First.ToObject<int>();
 					SendNotification(friendId, "FriendList");
 
-					return GetResponse(request, friendRelationService.Accept(CreateRequest(userId, friendId)));
+					return JsonHandler.GetResponse(request, friendRelationService.Accept(CreateRequest(userId, friendId)));
 
 				case "RemoveFriend":
 					friendId = data.First.ToObject<int>();
 					SendNotification(friendId, "FriendList");
 
-					return GetResponse(request, friendRelationService.Delete(CreateRequest(userId, friendId)));
+					return JsonHandler.GetResponse(request, friendRelationService.Delete(CreateRequest(userId, friendId)));
 
 				case "GetFriendList":
-					return GetResponse(request, friendRelationService.GetFriendList(userId, true));
+					return JsonHandler.GetResponse(request, friendRelationService.GetFriendList(userId, true));
 
 				case "GetPendingFriendList":
-					return GetResponse(request, friendRelationService.GetFriendList(userId, true));
+					return JsonHandler.GetResponse(request, friendRelationService.GetFriendList(userId, true));
 
 				//Messages
 				case "SendMessage":
 					var message = data.ToObject<MessageCreateNewRequest>();
 					SendNotification(message.ReceiverID, "Message", userId);
 
-					return GetResponse(request, messageService.Add(userId, message));
+					return JsonHandler.GetResponse(request, messageService.Add(userId, message));
 
 				case "DeleteMessage":
 					var messageId = data.First.ToObject<int>();
 					var receiverID = messageService.GetByID(userId, messageId).ReceiverID;
 					SendNotification(receiverID, "Message", userId);
 
-					return GetResponse(request, messageService.Delete(messageId));
+					return JsonHandler.GetResponse(request, messageService.Delete(messageId));
 
 				case "SetMessageSeen":
 					messageId = data.First.ToObject<int>();
 					receiverID = messageService.GetByID(userId, messageId).ReceiverID;
 					SendNotification(receiverID, "Message", userId);
 
-					return GetResponse(request, messageService.UpdateSeen(messageId));
+					return JsonHandler.GetResponse(request, messageService.UpdateSeen(messageId));
 
 				case "UpdateMessageContent":
 					messageId = data.SelectToken("messageId").ToObject<int>();
 					receiverID = messageService.GetByID(userId, messageId).ReceiverID;
 					SendNotification(receiverID, "Message", userId);
 
-					return GetResponse(request, messageService.UpdateContent(messageId,
+					return JsonHandler.GetResponse(request, messageService.UpdateContent(messageId,
 						data.SelectToken("messageContent").ToObject<string>()));
 
 				case "GetMessage":
-					return GetResponse(request, messageService.GetByID(
+					return JsonHandler.GetResponse(request, messageService.GetByID(
 						userId, data.First.ToObject<int>()));
 
 				case "GetMessagesBatch":
-					return GetResponse(request, messageService.GetBatch(
+					return JsonHandler.GetResponse(request, messageService.GetBatch(
 						userId, data.ToObject<MessageGetBatchRequest>()));
 
 				//Payment
@@ -176,23 +174,23 @@ namespace Communicator.WebSockets
 				//User
 				case "DeleteUser":
 					SendNotificationToAllFriends(friendRelationService, userId);
-					return GetResponse(request, userService.Delete(userId));
+					return JsonHandler.GetResponse(request, userService.Delete(userId));
 
 				case "UpdateBankAccount":
-					return GetResponse(request, userService.UpdateBankAccount(
+					return JsonHandler.GetResponse(request, userService.UpdateBankAccount(
 						userId, data.First.ToObject<string>()));
 
 				case "UpdateUserCredentials":
 					SendNotificationToAllFriends(friendRelationService, userId);
-					return GetResponse(request, userService.UpdateCredentials(
+					return JsonHandler.GetResponse(request, userService.UpdateCredentials(
 						userId, data.ToObject<UserUpdateCredentialsRequest>()));
 
 				case "GetUser":
-					return GetResponse(request, userService.GetByID(
+					return JsonHandler.GetResponse(request, userService.GetByID(
 						data.First.ToObject<int>()));
 
 				default:
-					return GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request));
+					return JsonHandler.GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request));
 			};
 		}
 
@@ -211,23 +209,23 @@ namespace Communicator.WebSockets
 
 			if (!response.Response.Equals(ErrorCodes.OK))
 			{
-				return GetResponse(requestName, response);
+				return JsonHandler.GetResponse(requestName, response);
 			}
 
 			var authorizeNetResponse = paymentService.SendAuthorizeNetRequest(request);
 			if (!authorizeNetResponse.Equals(ErrorCodes.OK))
 			{
 				paymentService.UpdateStatus(response.ID, false);
-				return GetResponse(requestName, authorizeNetResponse);
+				return JsonHandler.GetResponse(requestName, authorizeNetResponse);
 			}
-			return GetResponse(requestName, paymentService.UpdateStatus(response.ID, true));
+			return JsonHandler.GetResponse(requestName, paymentService.UpdateStatus(response.ID, true));
 		}
 
 		private void SendNotification(int id, string requestName, int? paramId = null)
 		{
 			if (_webSocketList.ContainsKey(id))
 			{
-				_webSocketList[id].SendAsync(GetUpdateRequest(requestName, paramId),
+				_webSocketList[id].SendAsync(JsonHandler.GetUpdateRequest(requestName, paramId),
 					WebSocketMessageType.Binary, true, CancellationToken.None);
 			}
 		}
@@ -242,78 +240,6 @@ namespace Communicator.WebSockets
 			{
 				SendNotification(friendId, "PendingFriendList");
 			}
-		}
-
-		private static byte[] GetUpdateRequest(string requestName, int? paramId = null)
-		{
-			var json = new JObject
-			{
-				{ "dataType", "Update" + requestName },
-			};
-			if (paramId != null)
-			{
-				json.Add("data", new JObject
-				{
-					{ "id", paramId },
-				});
-			}
-			return Encoding.UTF8.GetBytes(json.ToString());
-		}
-
-		private static byte[] GetResponse(string requestName, Object obj)
-		{
-			var json = new JObject
-			{
-				{ "dataType", requestName + "Response" },
-			};
-			if (obj is string str)
-			{
-				json.Add("successful", str.Equals(ErrorCodes.OK));
-				json.Add("data", str);
-			}
-			else
-			{
-				json.Add("successful", true);
-				json.Add("data", JToken.FromObject(obj));
-			}
-			return Encoding.UTF8.GetBytes(json.ToString());
-		}
-
-		private static byte[] GetErrorResponse(byte[] bytes)
-		{
-			var data = Encoding.UTF8.GetString(RemoveTrailingZeros(bytes));
-			ErrorLog("Invalid JSON", data);
-			var json = new JObject
-			{
-				{ "dataType", "ErrorResponse" },
-				{ "successful", false },
-				{ "data", "Invalid JSON: " + data },
-			};
-			return Encoding.UTF8.GetBytes(json.ToString());
-		}
-
-		private static byte[] RemoveTrailingZeros(byte[] bytes)
-		{
-			var i = bytes.Length - 1;
-			while (bytes[i] == 0)
-			{
-				--i;
-			}
-			var temp = new byte[i + 1];
-			Array.Copy(bytes, temp, i + 1);
-			return temp;
-		}
-
-		private static void ErrorLog(string message, string data)
-		{
-			var log = DateTime.Now.ToString();
-			log += " " + message + "\n" + data + "\n\n";
-			File.AppendAllText("Logs\\error_log.txt", log);
-		}
-
-		private int GetID(WebSocket webSocket)
-		{
-			return _webSocketList.FirstOrDefault(x => x.Value == webSocket).Key;
 		}
 
 		private static FriendRelationRequest CreateRequest(int userId, int friendId)
