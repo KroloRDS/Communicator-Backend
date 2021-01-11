@@ -91,52 +91,108 @@ namespace Communicator.WebSockets
 			};
 		}
 
-		private static byte[] ProcessLoggedInUserRequest(
+		private byte[] ProcessLoggedInUserRequest(
 			IFriendRelationService friendRelationService, IMessageService messageService, IPaymentService paymentService, IUserService userService,
 			string request, JToken data, int userId)
 		{
-			return request switch
+			switch (request)
 			{
 				//General
-				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
-				"IsLoggedInRequest" => GetResponse(request, ErrorCodes.OK),
-				"Register" => GetResponse(request, ErrorCodes.REGISTER_WHILE_LOGGED_IN),
+				case "Echo":
+					return Encoding.UTF8.GetBytes(data.ToString());
+
+				case "IsLoggedInRequest":
+					return GetResponse(request, ErrorCodes.OK);
+
+				case "Register":
+					return GetResponse(request, ErrorCodes.REGISTER_WHILE_LOGGED_IN);
+
 				//FriendList
-				"AddFriend" => GetResponse(request, friendRelationService.Add(
-					CreateRequest(userId, data.First.ToObject<int>()))),
-				"AcceptFriend" => GetResponse(request, friendRelationService.Accept(
-					CreateRequest(userId, data.First.ToObject<int>()))),
-				"RemoveFriend" => GetResponse(request, friendRelationService.Delete(
-					CreateRequest(userId, data.First.ToObject<int>()))),
-				"GetFriendList" => GetResponse(request, friendRelationService.GetFriendList(
-					userId, true)),
-				"GetPendingFriendList" => GetResponse(request, friendRelationService.GetFriendList(
-					userId, true)),
+				case "AddFriend":
+					var friendId = data.First.ToObject<int>();
+					SendNotification(friendId, "PendingFriendList");
+
+					return GetResponse(request, friendRelationService.Add(CreateRequest(userId, friendId)));
+
+				case "AcceptFriend":
+					friendId = data.First.ToObject<int>();
+					SendNotification(friendId, "FriendList");
+
+					return GetResponse(request, friendRelationService.Accept(CreateRequest(userId, friendId)));
+
+				case "RemoveFriend":
+					friendId = data.First.ToObject<int>();
+					SendNotification(friendId, "FriendList");
+
+					return GetResponse(request, friendRelationService.Delete(CreateRequest(userId, friendId)));
+
+				case "GetFriendList":
+					return GetResponse(request, friendRelationService.GetFriendList(userId, true));
+
+				case "GetPendingFriendList":
+					return GetResponse(request, friendRelationService.GetFriendList(userId, true));
+
 				//Messages
-				"SendMessage" => GetResponse(request, messageService.Add(
-					userId, data.ToObject<MessageCreateNewRequest>())),
-				"DeleteMessage" => GetResponse(request, messageService.Delete(
-					data.First.ToObject<int>())),
-				"SetMessageSeen" => GetResponse(request, messageService.UpdateSeen(
-					data.First.ToObject<int>())),
-				"UpdateMessageContent" => GetResponse(request, messageService.UpdateContent(
-					data.SelectToken("messageId").ToObject<int>(),
-					data.SelectToken("messageContent").ToObject<string>())),
-				"GetMessage" => GetResponse(request, messageService.GetByID(
-					userId, data.First.ToObject<int>())),
-				"GetMessagesBatch" => GetResponse(request, messageService.GetBatch(
-					userId, data.ToObject<MessageGetBatchRequest>())),
+				case "SendMessage":
+					var message = data.ToObject<MessageCreateNewRequest>();
+					SendNotification(message.ReceiverID, "Message", userId);
+
+					return GetResponse(request, messageService.Add(userId, message));
+
+				case "DeleteMessage":
+					var messageId = data.First.ToObject<int>();
+					var receiverID = messageService.GetByID(userId, messageId).ReceiverID;
+					SendNotification(receiverID, "Message", userId);
+
+					return GetResponse(request, messageService.Delete(messageId));
+
+				case "SetMessageSeen":
+					messageId = data.First.ToObject<int>();
+					receiverID = messageService.GetByID(userId, messageId).ReceiverID;
+					SendNotification(receiverID, "Message", userId);
+
+					return GetResponse(request, messageService.UpdateSeen(messageId));
+
+				case "UpdateMessageContent":
+					messageId = data.SelectToken("messageId").ToObject<int>();
+					receiverID = messageService.GetByID(userId, messageId).ReceiverID;
+					SendNotification(receiverID, "Message", userId);
+
+					return GetResponse(request, messageService.UpdateContent(messageId,
+						data.SelectToken("messageContent").ToObject<string>()));
+
+				case "GetMessage":
+					return GetResponse(request, messageService.GetByID(
+						userId, data.First.ToObject<int>()));
+
+				case "GetMessagesBatch":
+					return GetResponse(request, messageService.GetBatch(
+						userId, data.ToObject<MessageGetBatchRequest>()));
+
 				//Payment
-				"MakePayment" => MakePayment(paymentService, request, data, userId),
+				case "MakePayment":
+					return MakePayment(paymentService, request, data, userId);
+
 				//User
-				"DeleteUser" => GetResponse(request, userService.Delete(userId)),
-				"UpdateBankAccount" => GetResponse(request, userService.UpdateBankAccount(
-					userId, data.First.ToObject<string>())),
-				"UpdateUserCredentials" => GetResponse(request, userService.UpdateCredentials(
-					userId, data.ToObject<UserUpdateCredentialsRequest>())),
-				"GetUser" => GetResponse(request, userService.GetByID(
-					data.First.ToObject<int>())),
-				_ => GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request)),
+				case "DeleteUser":
+					SendNotificationToAllFriends(friendRelationService, userId);
+					return GetResponse(request, userService.Delete(userId));
+
+				case "UpdateBankAccount":
+					return GetResponse(request, userService.UpdateBankAccount(
+						userId, data.First.ToObject<string>()));
+
+				case "UpdateUserCredentials":
+					SendNotificationToAllFriends(friendRelationService, userId);
+					return GetResponse(request, userService.UpdateCredentials(
+						userId, data.ToObject<UserUpdateCredentialsRequest>()));
+
+				case "GetUser":
+					return GetResponse(request, userService.GetByID(
+						data.First.ToObject<int>()));
+
+				default:
+					return GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request));
 			};
 		}
 
@@ -220,24 +276,32 @@ namespace Communicator.WebSockets
 			};
 		}
 
-		private void SendRequests(List<int> idList, string requestName, int? paramId = null)
+		private void SendNotification(int id, string requestName, int? paramId = null)
 		{
-			//TODO: UpdateMessages(userId), UpdateUserData(userId), UpdateFriendList(), UpdatePendingFriendList()
-			foreach (int id in idList)
+			if (_webSocketList.ContainsKey(id))
 			{
-				if (_webSocketList.ContainsKey(id))
-				{
-					_webSocketList[id].SendAsync(GetRequest(requestName, paramId),
-						WebSocketMessageType.Binary, true, CancellationToken.None);
-				}
+				_webSocketList[id].SendAsync(GetUpdateRequest(requestName, paramId),
+					WebSocketMessageType.Binary, true, CancellationToken.None);
 			}
 		}
 
-		private static byte[] GetRequest(string requestName, int? paramId = null)
+		private void SendNotificationToAllFriends(IFriendRelationService friendRelationService, int userId)
+		{
+			foreach (var friendId in friendRelationService.GetFriendListIDs(userId, true))
+			{
+				SendNotification(friendId, "FriendList");
+			}
+			foreach (var friendId in friendRelationService.GetFriendListIDs(userId, false))
+			{
+				SendNotification(friendId, "PendingFriendList");
+			}
+		}
+
+		private static byte[] GetUpdateRequest(string requestName, int? paramId = null)
 		{
 			var json = new JObject
 			{
-				{ "dataType", requestName + "Response" },
+				{ "dataType", "Update" + requestName },
 			};
 			if (paramId != null)
 			{
