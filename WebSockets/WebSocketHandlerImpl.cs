@@ -108,56 +108,63 @@ namespace Communicator.WebSockets
 				//FriendList
 				case "AddFriend":
 					var friendId = data.First.ToObject<int>();
+					var response = JsonHandler.GetResponse(request, friendRelationService.Add(CreateRequest(userId, friendId)));
+					
 					SendNotification(friendId, "PendingFriendList");
-
-					return JsonHandler.GetResponse(request, friendRelationService.Add(CreateRequest(userId, friendId)));
+					return response;
 
 				case "AcceptFriend":
 					friendId = data.First.ToObject<int>();
+					response = JsonHandler.GetResponse(request, friendRelationService.Accept(CreateRequest(userId, friendId)));
+					
 					SendNotification(friendId, "FriendList");
-
-					return JsonHandler.GetResponse(request, friendRelationService.Accept(CreateRequest(userId, friendId)));
+					return response;
 
 				case "RemoveFriend":
 					friendId = data.First.ToObject<int>();
+					response = JsonHandler.GetResponse(request, friendRelationService.Delete(CreateRequest(userId, friendId)));
+					
 					SendNotification(friendId, "FriendList");
-
-					return JsonHandler.GetResponse(request, friendRelationService.Delete(CreateRequest(userId, friendId)));
+					return response;
 
 				case "GetFriendList":
 					return JsonHandler.GetResponse(request, friendRelationService.GetFriendList(userId, true));
 
 				case "GetPendingFriendList":
-					return JsonHandler.GetResponse(request, friendRelationService.GetFriendList(userId, true));
+					return JsonHandler.GetResponse(request, friendRelationService.GetFriendList(userId, false));
 
 				//Messages
 				case "SendMessage":
 					var message = data.ToObject<MessageCreateNewRequest>();
+					response = JsonHandler.GetResponse(request, messageService.Add(userId, message));
+					
 					SendNotification(message.ReceiverID, "Message", userId);
-
-					return JsonHandler.GetResponse(request, messageService.Add(userId, message));
+					return response;
 
 				case "DeleteMessage":
 					var messageId = data.First.ToObject<int>();
 					var receiverID = messageService.GetByID(userId, messageId).ReceiverID;
-					SendNotification(receiverID, "Message", userId);
+					response = JsonHandler.GetResponse(request, messageService.Delete(messageId));
 
-					return JsonHandler.GetResponse(request, messageService.Delete(messageId));
+					SendNotification(receiverID, "Message", userId);
+					return response;
 
 				case "SetMessageSeen":
 					messageId = data.First.ToObject<int>();
 					receiverID = messageService.GetByID(userId, messageId).ReceiverID;
+					response = JsonHandler.GetResponse(request, messageService.UpdateSeen(messageId));
+					
 					SendNotification(receiverID, "Message", userId);
-
-					return JsonHandler.GetResponse(request, messageService.UpdateSeen(messageId));
+					return response;
 
 				case "UpdateMessageContent":
 					messageId = data.SelectToken("messageId").ToObject<int>();
 					receiverID = messageService.GetByID(userId, messageId).ReceiverID;
-					SendNotification(receiverID, "Message", userId);
-
-					return JsonHandler.GetResponse(request, messageService.UpdateContent(messageId,
+					response = JsonHandler.GetResponse(request, messageService.UpdateContent(messageId,
 						data.SelectToken("messageContent").ToObject<string>()));
+					
+					SendNotification(receiverID, "Message", userId);
+					return response;
 
 				case "GetMessage":
 					return JsonHandler.GetResponse(request, messageService.GetByID(
@@ -173,17 +180,20 @@ namespace Communicator.WebSockets
 
 				//User
 				case "DeleteUser":
+					response = JsonHandler.GetResponse(request, userService.Delete(userId));
 					SendNotificationToAllFriends(friendRelationService, userId);
-					return JsonHandler.GetResponse(request, userService.Delete(userId));
+					return response;
 
 				case "UpdateBankAccount":
 					return JsonHandler.GetResponse(request, userService.UpdateBankAccount(
 						userId, data.First.ToObject<string>()));
 
 				case "UpdateUserCredentials":
-					SendNotificationToAllFriends(friendRelationService, userId);
-					return JsonHandler.GetResponse(request, userService.UpdateCredentials(
+					response = JsonHandler.GetResponse(request, userService.UpdateCredentials(
 						userId, data.ToObject<UserUpdateCredentialsRequest>()));
+
+					SendNotificationToAllFriends(friendRelationService, userId);
+					return response;
 
 				case "GetUser":
 					return JsonHandler.GetResponse(request, userService.GetByID(
