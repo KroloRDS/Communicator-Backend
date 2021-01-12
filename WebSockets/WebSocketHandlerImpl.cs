@@ -199,7 +199,7 @@ namespace Communicator.WebSockets
 			if (_webSocketList.ContainsKey(id))
 			{
 				_webSocketList[id].SendAsync(JsonHandler.GetUpdateRequest(requestName, paramId),
-					WebSocketMessageType.Binary, true, CancellationToken.None);
+					WebSocketMessageType.Text, true, CancellationToken.None);
 			}
 		}
 
