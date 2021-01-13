@@ -19,6 +19,11 @@ namespace Communicator.Services
 		
 		public string Add(UserCreateNewRequest request)
 		{
+			if (request.Login == null || request.Password == null)
+			{
+				return ErrorCodes.LOGIN_OR_PW_NULL;
+			}
+
 			if (_context.UserEntity.FirstOrDefault(x => x.Login == request.Login) != null)
 			{
 				return string.Format(ErrorCodes.LOGIN_EXIST, request.Login);
