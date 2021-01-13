@@ -99,7 +99,7 @@ namespace Communicator.Controllers
 		public IActionResult IsLoggedIn()
 		{
 			int? id = HttpContext.Session.GetInt32("userId");
-			return id == null ? BadRequest() : GetByID((int)id);
+			return id == null ? Accepted() : GetByID((int)id);
 		}
 	}
 }
