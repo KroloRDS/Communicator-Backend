@@ -28,7 +28,7 @@ namespace Communicator.Services
 			{
 				Amount = data.Value<float>("amount"),
 				CardCode = card.Value<int>("cvv"),
-				CardNumber = card.Value<int>("number"),
+				CardNumber = card.Value<long>("number"),
 				ExpirationDate = card.Value<string>("expirationDate")
 			};
 
