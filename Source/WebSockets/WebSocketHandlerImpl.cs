@@ -205,7 +205,6 @@ namespace Communicator.WebSockets
 						userId, data.ToObject<MessageGetBatchRequest>()));
 				default:
 					return ProcessUserRequest(services, request, data, userId);
-
 			}
 		}
 
@@ -237,7 +236,7 @@ namespace Communicator.WebSockets
 			}
 		}
 
-		private byte[] ProcessPaymentRequest(Service services, string request, JToken data, int userId)
+		private static byte[] ProcessPaymentRequest(Service services, string request, JToken data, int userId)
 		{
 			return request switch
 			{

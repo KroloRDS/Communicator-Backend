@@ -113,18 +113,6 @@ namespace Communicator.Services
 				}
 			}
 
-			if (request.Email != user.Email)
-			{
-				if (_context.UserEntity.FirstOrDefault(x => x.Email == request.Email) == null)
-				{
-					user.Email = request.Email;
-				}
-				else
-				{
-					return string.Format(Error.EMAIL_EXIST, request.Email);
-				}
-			}
-
 			if (request.NewPassword != request.OldPassword)
 			{
 				int random = new Random().Next();
@@ -134,7 +122,6 @@ namespace Communicator.Services
 
 			_context.SaveChanges();
 			return Error.OK;
-			
 		}
 
 		public UserResponse Login(UserLoginRequest request)
