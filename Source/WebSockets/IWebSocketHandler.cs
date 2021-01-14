@@ -8,6 +8,6 @@ namespace Communicator.WebSockets
 {
 	public interface IWebSocketHandler
 	{
-		Task Handle(ISession session, WebSocket webSocket, CommunicatorDbContex db);
+		Task Handle(ISession session, WebSocket webSocket, Service services);
 	}
 }

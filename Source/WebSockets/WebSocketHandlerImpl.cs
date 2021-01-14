@@ -23,13 +23,13 @@ namespace Communicator.WebSockets
 			_webSocketList = new Dictionary<int, WebSocket>();
 		}
 
-		public async Task Handle(ISession session, WebSocket webSocket, CommunicatorDbContex db)
+		public async Task Handle(ISession session, WebSocket webSocket, Service services)
 		{
 			var buffer = new byte[1024 * 4];
 			WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 			while (!result.CloseStatus.HasValue)
 			{
-				var response = await Task.Run(() => ProcessRequest(session, webSocket, db, buffer));
+				var response = await Task.Run(() => ProcessRequest(session, webSocket, services, buffer));
 				Array.Clear(buffer, 0, buffer.Length);
 
 				await webSocket.SendAsync(new ArraySegment<byte>(response), result.MessageType, result.EndOfMessage, CancellationToken.None);
@@ -39,10 +39,8 @@ namespace Communicator.WebSockets
 			_webSocketList.Remove(_webSocketList.FirstOrDefault(x => x.Value == webSocket).Key);
 		}
 
-		private byte[] ProcessRequest(ISession session, WebSocket webSocket, CommunicatorDbContex db, byte[] bytes)
+		private byte[] ProcessRequest(ISession session, WebSocket webSocket, Service services, byte[] bytes)
 		{
-			var services = new Service(db);
-
 			JObject json;
 			try
 			{
