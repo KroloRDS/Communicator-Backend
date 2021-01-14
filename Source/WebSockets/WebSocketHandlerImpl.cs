@@ -29,7 +29,7 @@ namespace Communicator.WebSockets
 			WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 			while (!result.CloseStatus.HasValue)
 			{
-				var response = await Task.Run(() => ProcessRequest(session, webSocket, services, buffer));
+				var response = await Task.Run(() => ParseRequest(session, webSocket, services, buffer));
 				Array.Clear(buffer, 0, buffer.Length);
 
 				await webSocket.SendAsync(new ArraySegment<byte>(response), result.MessageType, result.EndOfMessage, CancellationToken.None);
@@ -39,7 +39,7 @@ namespace Communicator.WebSockets
 			_webSocketList.Remove(_webSocketList.FirstOrDefault(x => x.Value == webSocket).Key);
 		}
 
-		private byte[] ProcessRequest(ISession session, WebSocket webSocket, Service services, byte[] bytes)
+		private byte[] ParseRequest(ISession session, WebSocket webSocket, Service services, byte[] bytes)
 		{
 			JObject json;
 			try
@@ -64,27 +64,10 @@ namespace Communicator.WebSockets
 				return JsonHandler.GetErrorResponse(exception, json.ToString());
 			}
 
-			int? id;
 			try
 			{
-				id = session.GetInt32("userId");
-			}
-			catch (Exception exception)
-			{
-				return JsonHandler.GetErrorResponse(exception, session.ToString());
-			}
-
-			try
-			{
-				if (id == null)
-				{
-					return ProcessLoggedOutUserRequest(services, request, data);
-				}
-
-				_webSocketList[(int)id] = webSocket;
-				return request.Equals("LogOut") ?
-					Logout(session, request, (int)id) :
-					ProcessGeneralRequest(services, request, data, (int)id);
+				int? id = session.GetInt32("userId");
+				return ProcessRequest(session, webSocket, services, data, request, id);
 			}
 			catch (Exception exception)
 			{
@@ -92,11 +75,17 @@ namespace Communicator.WebSockets
 			}
 		}
 
-		private byte[] Logout(ISession session, string request, int id)
+		private byte[] ProcessRequest(ISession session, WebSocket webSocket, Service services, JToken data, string request, int? id)
 		{
-			session.Clear();
-			_webSocketList.Remove(id);
-			return JsonHandler.GetResponse(request, Error.OK);
+			if (id == null)
+			{
+				return ProcessLoggedOutUserRequest(services, request, data);
+			}
+
+			_webSocketList[(int)id] = webSocket;
+			return request.Equals("LogOut") ?
+				Logout(session, request, (int)id) :
+				ProcessFriendListRequest(services, request, data, (int)id);
 		}
 
 		private static byte[] ProcessLoggedOutUserRequest(Service services, string request, JToken data)
@@ -110,15 +99,11 @@ namespace Communicator.WebSockets
 			};
 		}
 
-		private byte[] ProcessGeneralRequest(Service services, string request, JToken data, int userId)
+		private byte[] Logout(ISession session, string request, int id)
 		{
-			return request switch
-			{
-				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
-				"IsLoggedInRequest" => JsonHandler.GetResponse(request, Error.OK),
-				"Register" => JsonHandler.GetResponse(request, Error.REGISTER_WHILE_LOGGED_IN),
-				_ => ProcessFriendListRequest(services, request, data, userId),
-			};
+			session.Clear();
+			_webSocketList.Remove(id);
+			return JsonHandler.GetResponse(request, Error.OK);
 		}
 
 		private byte[] ProcessFriendListRequest(Service services, string request, JToken data, int userId)
@@ -230,14 +215,17 @@ namespace Communicator.WebSockets
 					return JsonHandler.GetResponse(request, services.User.GetByID(
 						data.First.ToObject<int>()));
 				default:
-					return ProcessPaymentRequest(services, request, data, userId);
+					return ProcessOtherRequest(services, request, data, userId);
 			}
 		}
 
-		private static byte[] ProcessPaymentRequest(Service services, string request, JToken data, int userId)
+		private static byte[] ProcessOtherRequest(Service services, string request, JToken data, int userId)
 		{
 			return request switch
 			{
+				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
+				"IsLoggedInRequest" => JsonHandler.GetResponse(request, Error.OK),
+				"Register" => JsonHandler.GetResponse(request, Error.REGISTER_WHILE_LOGGED_IN),
 				"MakePayment" => services.Payment.MakePayment(request, data, userId),
 				_ => JsonHandler.GetResponse(request, string.Format(Error.CANNOT_FIND_REQUEST, request)),
 			};
