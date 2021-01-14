@@ -2,7 +2,7 @@
 using System.Text;
 using System;
 
-namespace Communicator.WebSockets
+namespace Communicator.HelperClasses
 {
 	public class JsonHandler
 	{

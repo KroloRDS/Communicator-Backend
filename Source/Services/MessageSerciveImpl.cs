@@ -2,6 +2,7 @@
 using System.Linq;
 using System;
 
+using Communicator.HelperClasses;
 using Communicator.Entities;
 using Communicator.DTOs;
 

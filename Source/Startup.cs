@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Net.WebSockets;
 
+using Communicator.HelperClasses;
 using Communicator.WebSockets;
 using Communicator.Services;
 

@@ -8,6 +8,7 @@ using System.Text;
 using System.Linq;
 using System;
 
+using Communicator.HelperClasses;
 using Communicator.Services;
 using Communicator.DTOs;
 
@@ -40,10 +41,7 @@ namespace Communicator.WebSockets
 
 		private byte[] ProcessRequest(ISession session, WebSocket webSocket, CommunicatorDbContex db, byte[] bytes)
 		{
-			var friendRelationService = new FriendRelationServiceImpl(db);
-			var messageSercive = new MessageSerciveImpl(db);
-			var paymentService = new PaymentServiceImpl(db);
-			var userService = new UserServiceImpl(db);
+			var services = new Service(db);
 
 			JObject json;
 			try
@@ -82,14 +80,13 @@ namespace Communicator.WebSockets
 			{
 				if (id == null)
 				{
-					return ProcessLoggedOutUserRequest(userService, request, data);
+					return ProcessLoggedOutUserRequest(services, request, data);
 				}
 
 				_webSocketList[(int)id] = webSocket;
 				return request.Equals("LogOut") ?
 					Logout(session, request, (int)id) :
-					ProcessLoggedInUserRequest(friendRelationService,
-					messageSercive, paymentService, userService, request, data, (int)id);
+					ProcessGeneralRequest(services, request, data, (int)id);
 			}
 			catch (Exception exception)
 			{
@@ -104,129 +101,148 @@ namespace Communicator.WebSockets
 			return JsonHandler.GetResponse(request, Error.OK);
 		}
 
-		private static byte[] ProcessLoggedOutUserRequest(IUserService userService, string request, JToken data)
+		private static byte[] ProcessLoggedOutUserRequest(Service services, string request, JToken data)
 		{
 			return request switch
 			{
 				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
 				"IsLoggedInRequest" => JsonHandler.GetResponse(request, Error.NOT_LOGGED_IN),
-				"Register" => JsonHandler.GetResponse(request, userService.Add(data.ToObject<UserCreateNewRequest>())),
+				"Register" => JsonHandler.GetResponse(request, services.User.Add(data.ToObject<UserCreateNewRequest>())),
 				_ => JsonHandler.GetResponse(request, string.Format(Error.CANNOT_FIND_REQUEST_OR_UNAUTHORIZED, request)),
 			};
 		}
 
-		private byte[] ProcessLoggedInUserRequest(
-			IFriendRelationService friendRelationService, IMessageService messageService, IPaymentService paymentService, IUserService userService,
-			string request, JToken data, int userId)
+		private byte[] ProcessGeneralRequest(Service services, string request, JToken data, int userId)
 		{
+			return request switch
+			{
+				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
+				"IsLoggedInRequest" => JsonHandler.GetResponse(request, Error.OK),
+				"Register" => JsonHandler.GetResponse(request, Error.REGISTER_WHILE_LOGGED_IN),
+				_ => ProcessFriendListRequest(services, request, data, userId),
+			};
+		}
+
+		private byte[] ProcessFriendListRequest(Service services, string request, JToken data, int userId)
+		{
+			var service = services.FriendRelation;
 			switch (request)
 			{
-				//General
-				case "Echo":
-					return Encoding.UTF8.GetBytes(data.ToString());
-
-				case "IsLoggedInRequest":
-					return JsonHandler.GetResponse(request, Error.OK);
-
-				case "Register":
-					return JsonHandler.GetResponse(request, Error.REGISTER_WHILE_LOGGED_IN);
-
-				//FriendList
 				case "AddFriend":
 					var friendId = data.First.ToObject<int>();
-					var response = JsonHandler.GetResponse(request, friendRelationService.Add(CreateRequest(userId, friendId)));
-					
+					var response = JsonHandler.GetResponse(request, service.Add(CreateRequest(userId, friendId)));
+
 					SendNotification(friendId, "PendingFriendList");
 					return response;
 
 				case "AcceptFriend":
 					friendId = data.First.ToObject<int>();
-					response = JsonHandler.GetResponse(request, friendRelationService.Accept(CreateRequest(userId, friendId)));
-					
+					response = JsonHandler.GetResponse(request, service.Accept(CreateRequest(userId, friendId)));
+
 					SendNotification(friendId, "FriendList");
 					return response;
 
 				case "RemoveFriend":
 					friendId = data.First.ToObject<int>();
-					response = JsonHandler.GetResponse(request, friendRelationService.Delete(CreateRequest(userId, friendId)));
-					
+					response = JsonHandler.GetResponse(request, service.Delete(CreateRequest(userId, friendId)));
+
 					SendNotification(friendId, "FriendList");
 					return response;
 
 				case "GetFriendList":
-					return JsonHandler.GetResponse(request, friendRelationService.GetFriendList(userId, true));
+					return JsonHandler.GetResponse(request, service.GetFriendList(userId, true));
 
 				case "GetPendingFriendList":
-					return JsonHandler.GetResponse(request, friendRelationService.GetFriendList(userId, false));
+					return JsonHandler.GetResponse(request, service.GetFriendList(userId, false));
+				default:
+					return ProcessMessageRequest(services, request, data, userId);
+			}
+		}
 
-				//Messages
+		private byte[] ProcessMessageRequest(Service services, string request, JToken data, int userId)
+		{
+			var service = services.Message;
+			switch (request)
+			{
 				case "SendMessage":
 					var message = data.ToObject<MessageCreateNewRequest>();
-					response = JsonHandler.GetResponse(request, messageService.Add(userId, message));
-					
+					var response = JsonHandler.GetResponse(request, service.Add(userId, message));
+
 					SendNotification(message.ReceiverID, "Message", userId);
 					return response;
 
 				case "DeleteMessage":
 					var messageId = data.First.ToObject<int>();
-					var receiverID = messageService.GetByID(userId, messageId).ReceiverID;
-					response = JsonHandler.GetResponse(request, messageService.Delete(messageId));
+					var receiverID = services.Message.GetByID(userId, messageId).ReceiverID;
+					response = JsonHandler.GetResponse(request, service.Delete(messageId));
 
 					SendNotification(receiverID, "Message", userId);
 					return response;
 
 				case "SetMessageSeen":
 					messageId = data.First.ToObject<int>();
-					receiverID = messageService.GetByID(userId, messageId).ReceiverID;
-					response = JsonHandler.GetResponse(request, messageService.UpdateSeen(messageId));
-					
+					receiverID = services.Message.GetByID(userId, messageId).ReceiverID;
+					response = JsonHandler.GetResponse(request, service.UpdateSeen(messageId));
+
 					SendNotification(receiverID, "Message", userId);
 					return response;
 
 				case "UpdateMessageContent":
 					messageId = data.SelectToken("messageId").ToObject<int>();
-					receiverID = messageService.GetByID(userId, messageId).ReceiverID;
-					response = JsonHandler.GetResponse(request, messageService.UpdateContent(messageId,
+					receiverID = services.Message.GetByID(userId, messageId).ReceiverID;
+					response = JsonHandler.GetResponse(request, service.UpdateContent(messageId,
 						data.SelectToken("messageContent").ToObject<string>()));
-					
+
 					SendNotification(receiverID, "Message", userId);
 					return response;
 
 				case "GetMessage":
-					return JsonHandler.GetResponse(request, messageService.GetByID(
+					return JsonHandler.GetResponse(request, service.GetByID(
 						userId, data.First.ToObject<int>()));
 
 				case "GetMessagesBatch":
-					return JsonHandler.GetResponse(request, messageService.GetBatch(
+					return JsonHandler.GetResponse(request, service.GetBatch(
 						userId, data.ToObject<MessageGetBatchRequest>()));
+				default:
+					return ProcessUserRequest(services, request, data, userId);
 
-				//Payment
-				case "MakePayment":
-					return paymentService.MakePayment(request, data, userId);
+			}
+		}
 
-				//User
+		private byte[] ProcessUserRequest(Service services, string request, JToken data, int userId)
+		{
+			switch (request)
+			{
 				case "DeleteUser":
-					response = JsonHandler.GetResponse(request, userService.Delete(userId));
-					SendNotificationToAllFriends(friendRelationService, userId);
+					var response = JsonHandler.GetResponse(request, services.User.Delete(userId));
+					SendNotificationToAllFriends(services.FriendRelation, userId);
 					return response;
 
 				case "UpdateBankAccount":
-					return JsonHandler.GetResponse(request, userService.UpdateBankAccount(
+					return JsonHandler.GetResponse(request, services.User.UpdateBankAccount(
 						userId, data.First.ToObject<string>()));
 
 				case "UpdateUserCredentials":
-					response = JsonHandler.GetResponse(request, userService.UpdateCredentials(
+					response = JsonHandler.GetResponse(request, services.User.UpdateCredentials(
 						userId, data.ToObject<UserUpdateCredentialsRequest>()));
 
-					SendNotificationToAllFriends(friendRelationService, userId);
+					SendNotificationToAllFriends(services.FriendRelation, userId);
 					return response;
 
 				case "GetUser":
-					return JsonHandler.GetResponse(request, userService.GetByID(
+					return JsonHandler.GetResponse(request, services.User.GetByID(
 						data.First.ToObject<int>()));
-
 				default:
-					return JsonHandler.GetResponse(request, string.Format(Error.CANNOT_FIND_REQUEST, request));
+					return ProcessPaymentRequest(services, request, data, userId);
+			}
+		}
+
+		private byte[] ProcessPaymentRequest(Service services, string request, JToken data, int userId)
+		{
+			return request switch
+			{
+				"MakePayment" => services.Payment.MakePayment(request, data, userId),
+				_ => JsonHandler.GetResponse(request, string.Format(Error.CANNOT_FIND_REQUEST, request)),
 			};
 		}
 

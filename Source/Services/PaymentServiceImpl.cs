@@ -4,6 +4,7 @@ using System.Net;
 using System.IO;
 using System;
 
+using Communicator.HelperClasses;
 using Communicator.WebSockets;
 using Communicator.Entities;
 using Communicator.DTOs;

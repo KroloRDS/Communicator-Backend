@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using System.Net.WebSockets;
 
+using Communicator.HelperClasses;
+
 namespace Communicator.WebSockets
 {
 	public interface IWebSocketHandler

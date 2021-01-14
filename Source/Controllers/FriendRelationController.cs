@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
+using Communicator.HelperClasses;
 using Communicator.Services;
 using Communicator.DTOs;
 

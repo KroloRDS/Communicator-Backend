@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
+using Communicator.HelperClasses;
 using Communicator.Entities;
 using Communicator.DTOs;
 

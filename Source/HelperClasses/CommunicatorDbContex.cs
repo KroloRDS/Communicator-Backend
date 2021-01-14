@@ -2,7 +2,7 @@
 
 using Communicator.Entities;
 
-namespace Communicator
+namespace Communicator.HelperClasses
 {
 	public class CommunicatorDbContex : DbContext
 	{

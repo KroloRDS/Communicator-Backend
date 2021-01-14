@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System;
 
-namespace Communicator
+namespace Communicator.HelperClasses
 {
 	public class Error
 	{
