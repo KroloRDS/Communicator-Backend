@@ -1,6 +1,9 @@
-﻿namespace Communicator
+﻿using System.IO;
+using System;
+
+namespace Communicator
 {
-	public class ErrorCodes
+	public class Error
 	{
 		public static readonly string OK = "OK";
 		public static readonly string CANNOT_ADD_YOURSELF = "Cannot add yourself to friend list";
@@ -19,5 +22,16 @@
 		public static readonly string NOT_LOGGED_IN = "User is not logged in";
 		public static readonly string REGISTER_WHILE_LOGGED_IN = "Cannot register new account while being logged in";
 		public static readonly string LOGIN_OR_PW_NULL = "Login or password is null";
+
+		public static void Log(Exception exception, string data = null)
+		{
+			var log = DateTime.Now.ToString() + "\n" + exception.Message + "\n";
+			if (data != null)
+			{
+				log += data + "\n";
+			}
+
+			File.AppendAllText("Logs\\error_log.txt", log + "\n\n");
+		}
 	}
 }

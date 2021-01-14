@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Text;
-using System.IO;
 using System;
 
 namespace Communicator.WebSockets
@@ -31,7 +30,7 @@ namespace Communicator.WebSockets
 			};
 			if (obj is string str)
 			{
-				json.Add("successful", str.Equals(ErrorCodes.OK));
+				json.Add("successful", str.Equals(Error.OK));
 				json.Add("data", str);
 			}
 			else
@@ -42,36 +41,22 @@ namespace Communicator.WebSockets
 			return Encoding.UTF8.GetBytes(json.ToString());
 		}
 
-		public static byte[] GetErrorResponse(byte[] bytes)
+		public static byte[] GetErrorResponse(Exception exception, string data = null)
 		{
-			var data = Encoding.UTF8.GetString(RemoveTrailingZeros(bytes));
-			ErrorLog("Invalid JSON", data);
+			Error.Log(exception, data);
 			var json = new JObject
 			{
 				{ "dataType", "ErrorResponse" },
 				{ "successful", false },
-				{ "data", "Invalid JSON: " + data },
+				{ "exception", exception.Message },
 			};
-			return Encoding.UTF8.GetBytes(json.ToString());
-		}
 
-		private static byte[] RemoveTrailingZeros(byte[] bytes)
-		{
-			var i = bytes.Length - 1;
-			while (bytes[i] == 0)
+			if (data != null)
 			{
-				--i;
+				json.Add("additionalInfo", data);
 			}
-			var temp = new byte[i + 1];
-			Array.Copy(bytes, temp, i + 1);
-			return temp;
-		}
 
-		private static void ErrorLog(string message, string data)
-		{
-			var log = DateTime.Now.ToString();
-			log += " " + message + "\n" + data + "\n\n";
-			File.AppendAllText("Logs\\error_log.txt", log);
+			return Encoding.UTF8.GetBytes(json.ToString());
 		}
 	}
 }

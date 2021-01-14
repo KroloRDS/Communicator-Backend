@@ -50,32 +50,58 @@ namespace Communicator.WebSockets
 			{
 				json = JObject.Parse(Encoding.UTF8.GetString(bytes));
 			}
-			catch
+			catch (Exception exception)
 			{
-				return JsonHandler.GetErrorResponse(bytes);
+				return JsonHandler.GetErrorResponse(exception, Encoding.UTF8.GetString(bytes));
 			}
 
-			var data = json.SelectToken("data");
-			var request = json.Value<string>("dataType");
-			request = request.Substring(0, request.LastIndexOf("Request"));
-
-			int? id = session.GetInt32("userId");
-			if (id == null)
+			JToken data;
+			string request;
+			try
 			{
-				return ProcessLoggedOutUserRequest(userService, request, data);
+				data = json.SelectToken("data");
+				request = json.Value<string>("dataType");
+				request = request.Substring(0, request.LastIndexOf("Request"));
+			}
+			catch (Exception exception)
+			{
+				return JsonHandler.GetErrorResponse(exception, json.ToString());
 			}
 
-			_webSocketList[(int)id] = webSocket;
-			return request.Equals("LogOut") ?
-				Logout(session, request, (int)id) :
-				ProcessLoggedInUserRequest(friendRelationService, messageSercive, paymentService, userService, request, data, (int)id);
+			int? id;
+			try
+			{
+				id = session.GetInt32("userId");
+			}
+			catch (Exception exception)
+			{
+				return JsonHandler.GetErrorResponse(exception, session.ToString());
+			}
+
+			try
+			{
+				if (id == null)
+				{
+					return ProcessLoggedOutUserRequest(userService, request, data);
+				}
+
+				_webSocketList[(int)id] = webSocket;
+				return request.Equals("LogOut") ?
+					Logout(session, request, (int)id) :
+					ProcessLoggedInUserRequest(friendRelationService,
+					messageSercive, paymentService, userService, request, data, (int)id);
+			}
+			catch (Exception exception)
+			{
+				return JsonHandler.GetErrorResponse(exception);
+			}
 		}
 
 		private byte[] Logout(ISession session, string request, int id)
 		{
 			session.Clear();
 			_webSocketList.Remove(id);
-			return JsonHandler.GetResponse(request, ErrorCodes.OK);
+			return JsonHandler.GetResponse(request, Error.OK);
 		}
 
 		private static byte[] ProcessLoggedOutUserRequest(IUserService userService, string request, JToken data)
@@ -83,9 +109,9 @@ namespace Communicator.WebSockets
 			return request switch
 			{
 				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
-				"IsLoggedInRequest" => JsonHandler.GetResponse(request, ErrorCodes.NOT_LOGGED_IN),
+				"IsLoggedInRequest" => JsonHandler.GetResponse(request, Error.NOT_LOGGED_IN),
 				"Register" => JsonHandler.GetResponse(request, userService.Add(data.ToObject<UserCreateNewRequest>())),
-				_ => JsonHandler.GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST_OR_UNAUTHORIZED, request)),
+				_ => JsonHandler.GetResponse(request, string.Format(Error.CANNOT_FIND_REQUEST_OR_UNAUTHORIZED, request)),
 			};
 		}
 
@@ -100,10 +126,10 @@ namespace Communicator.WebSockets
 					return Encoding.UTF8.GetBytes(data.ToString());
 
 				case "IsLoggedInRequest":
-					return JsonHandler.GetResponse(request, ErrorCodes.OK);
+					return JsonHandler.GetResponse(request, Error.OK);
 
 				case "Register":
-					return JsonHandler.GetResponse(request, ErrorCodes.REGISTER_WHILE_LOGGED_IN);
+					return JsonHandler.GetResponse(request, Error.REGISTER_WHILE_LOGGED_IN);
 
 				//FriendList
 				case "AddFriend":
@@ -200,7 +226,7 @@ namespace Communicator.WebSockets
 						data.First.ToObject<int>()));
 
 				default:
-					return JsonHandler.GetResponse(request, string.Format(ErrorCodes.CANNOT_FIND_REQUEST, request));
+					return JsonHandler.GetResponse(request, string.Format(Error.CANNOT_FIND_REQUEST, request));
 			};
 		}
 

@@ -19,7 +19,7 @@ namespace Communicator.Services
 		{
 			if (request.FriendListOwnerID == request.FriendID)
 			{
-				return ErrorCodes.CANNOT_ADD_YOURSELF;
+				return Error.CANNOT_ADD_YOURSELF;
 			}
 
 			var relations = FindRelations(request);
@@ -30,11 +30,11 @@ namespace Communicator.Services
 
 			if (_context.UserEntity.FirstOrDefault(x => x.ID == request.FriendID) == null)
 			{
-				return string.Format(ErrorCodes.CANNOT_FIND_USER, request.FriendID);
+				return string.Format(Error.CANNOT_FIND_USER, request.FriendID);
 			}
 			if (_context.UserEntity.FirstOrDefault(x => x.ID == request.FriendListOwnerID) == null)
 			{
-				return string.Format(ErrorCodes.CANNOT_FIND_USER, request.FriendListOwnerID);
+				return string.Format(Error.CANNOT_FIND_USER, request.FriendListOwnerID);
 			}
 
 			_context.FriendRelationEntity.Add(new FriendRelationEntity
@@ -50,20 +50,20 @@ namespace Communicator.Services
 				Accepted = false
 			});
 			_context.SaveChanges();
-			return ErrorCodes.OK;
+			return Error.OK;
 		}
 
 		public string Delete(FriendRelationRequest request)
 		{
 			if (request.FriendListOwnerID == request.FriendID)
 			{
-				return ErrorCodes.CANNOT_DELETE_YOURSELF;
+				return Error.CANNOT_DELETE_YOURSELF;
 			}
 
 			var relations = FindRelations(request);
 			if (relations.Count != 2)
 			{
-				return string.Format(ErrorCodes.RELATION_DOES_NOT_EXIST, request.FriendID, request.FriendListOwnerID);
+				return string.Format(Error.RELATION_DOES_NOT_EXIST, request.FriendID, request.FriendListOwnerID);
 			}
 
 			foreach (var relation in relations)
@@ -71,14 +71,14 @@ namespace Communicator.Services
 				_context.FriendRelationEntity.Remove(relation);
 			}
 			_context.SaveChanges();
-			return ErrorCodes.OK;
+			return Error.OK;
 		}
 
 		public string Accept(FriendRelationRequest request)
 		{
 			if (request.FriendListOwnerID == request.FriendID)
 			{
-				return ErrorCodes.CANNOT_ADD_YOURSELF;
+				return Error.CANNOT_ADD_YOURSELF;
 			}
 
 			var relation = _context.FriendRelationEntity.FirstOrDefault(x =>
@@ -87,12 +87,12 @@ namespace Communicator.Services
 
 			if (relation == null || relation.Accepted)
 			{
-				return ErrorCodes.RELATION_DOES_NOT_EXIST_OR_ACCEPTED;
+				return Error.RELATION_DOES_NOT_EXIST_OR_ACCEPTED;
 			}
 
 			relation.Accepted = true;
 			_context.SaveChanges();
-			return ErrorCodes.OK;
+			return Error.OK;
 		}
 
 		public List<UserWithLastMessageResponse> GetFriendList(int userId, bool accepted)

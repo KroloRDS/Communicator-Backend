@@ -28,7 +28,7 @@ namespace Communicator.Controllers
 			}
 
 			var response = _service.Add(CreateRequest(id, friendId));
-			return response.Equals(ErrorCodes.OK) ? Ok() : BadRequest(response);
+			return response.Equals(Error.OK) ? Ok() : BadRequest(response);
 		}
 
 		[HttpDelete]
@@ -42,7 +42,7 @@ namespace Communicator.Controllers
 			}
 
 			var response = _service.Delete(CreateRequest(id, friendId));
-			return response.Equals(ErrorCodes.OK) ? Ok() : BadRequest(response);
+			return response.Equals(Error.OK) ? Ok() : BadRequest(response);
 		}
 
 		[HttpPut]
@@ -56,7 +56,7 @@ namespace Communicator.Controllers
 			}
 
 			var response = _service.Accept(CreateRequest(id, friendId));
-			return response.Equals(ErrorCodes.OK) ? Ok() : BadRequest(response);
+			return response.Equals(Error.OK) ? Ok() : BadRequest(response);
 		}
 
 		[HttpGet]

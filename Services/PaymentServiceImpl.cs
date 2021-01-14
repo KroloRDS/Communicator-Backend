@@ -33,13 +33,13 @@ namespace Communicator.Services
 
 			var response = AddPayment(userId, request);
 
-			if (!response.Response.Equals(ErrorCodes.OK))
+			if (!response.Response.Equals(Error.OK))
 			{
 				return JsonHandler.GetResponse(requestName, response);
 			}
 
 			var authorizeNetResponse = SendAuthorizeNetRequest(request);
-			if (!authorizeNetResponse.Equals(ErrorCodes.OK))
+			if (!authorizeNetResponse.Equals(Error.OK))
 			{
 				UpdateStatus(response.ID, false);
 				return JsonHandler.GetResponse(requestName, authorizeNetResponse);
@@ -64,7 +64,7 @@ namespace Communicator.Services
 			return new PaymentResponse
 			{
 				ID = payment.ID,
-				Response = ErrorCodes.OK
+				Response = Error.OK
 			};
 		}
 
@@ -73,12 +73,12 @@ namespace Communicator.Services
 			var payment = _context.PaymentEntity.FirstOrDefault(x => x.ID == id);
 			if (payment == null)
 			{
-				return string.Format(ErrorCodes.CANNOT_FIND_PAYMENT, id);
+				return string.Format(Error.CANNOT_FIND_PAYMENT, id);
 			}
 
 			payment.Status = status ? (int)PaymentEntity.Statuses.SUCCEDED : (int)PaymentEntity.Statuses.FAILED;
 			_context.SaveChanges();
-			return ErrorCodes.OK;
+			return Error.OK;
 		}
 
 		private static string SendAuthorizeNetRequest(PaymentRequest request)
@@ -97,7 +97,7 @@ namespace Communicator.Services
 
 			return response.SelectToken("transactionResponse").Value<string>("responseCode").Equals("1") &&
 				response.SelectToken("messages").Value<string>("resultCode").Equals("Ok") ?
-				ErrorCodes.OK : response.SelectToken("errors").Values().First().Value<string>("errorText");
+				Error.OK : response.SelectToken("errors").Values().First().Value<string>("errorText");
 		}
 
 		private static JObject CreateAuthorizeNetRequest(PaymentRequest request)

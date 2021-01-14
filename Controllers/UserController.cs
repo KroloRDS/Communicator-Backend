@@ -22,7 +22,7 @@ namespace Communicator.Controllers
 		public IActionResult Add(UserCreateNewRequest request)
 		{
 			var response = _service.Add(request);
-			return response.Equals(ErrorCodes.OK) ? Ok() : BadRequest(response);
+			return response.Equals(Error.OK) ? Ok() : BadRequest(response);
 		}
 
 		[HttpDelete]
@@ -36,7 +36,7 @@ namespace Communicator.Controllers
 			}
 
 			var response = _service.Delete((int)id);
-			return response.Equals(ErrorCodes.OK) ? Ok() : BadRequest(response);
+			return response.Equals(Error.OK) ? Ok() : BadRequest(response);
 		}
 
 		[HttpPut]
@@ -50,7 +50,7 @@ namespace Communicator.Controllers
 			}
 
 			var response = _service.UpdateBankAccount((int)id, account);
-			return response.Equals(ErrorCodes.OK) ? Ok() : BadRequest(response);
+			return response.Equals(Error.OK) ? Ok() : BadRequest(response);
 		}
 
 		[HttpPut]
@@ -64,7 +64,7 @@ namespace Communicator.Controllers
 			}
 
 			var response = _service.UpdateCredentials((int)id, request);
-			return response.Equals(ErrorCodes.OK) ? Ok() : BadRequest(response);
+			return response.Equals(Error.OK) ? Ok() : BadRequest(response);
 		}
 
 		[HttpGet]

@@ -21,16 +21,16 @@ namespace Communicator.Services
 		{
 			if (request.Login == null || request.Password == null)
 			{
-				return ErrorCodes.LOGIN_OR_PW_NULL;
+				return Error.LOGIN_OR_PW_NULL;
 			}
 
 			if (_context.UserEntity.FirstOrDefault(x => x.Login == request.Login) != null)
 			{
-				return string.Format(ErrorCodes.LOGIN_EXIST, request.Login);
+				return string.Format(Error.LOGIN_EXIST, request.Login);
 			}
 			if (_context.UserEntity.FirstOrDefault(x => x.Email == request.Email) != null)
 			{
-				return string.Format(ErrorCodes.EMAIL_EXIST, request.Email);
+				return string.Format(Error.EMAIL_EXIST, request.Email);
 			}
 
 			int random = new Random().Next();
@@ -45,7 +45,7 @@ namespace Communicator.Services
 				PublicKey = "???" //TODO: generate from password = private key
 			});
 			_context.SaveChanges();
-			return ErrorCodes.OK;
+			return Error.OK;
 		}
 
 		public string Delete(int id)
@@ -53,7 +53,7 @@ namespace Communicator.Services
 			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
 			if (user == null)
 			{
-				return string.Format(ErrorCodes.CANNOT_FIND_USER, id);
+				return string.Format(Error.CANNOT_FIND_USER, id);
 			}
 
 			_context.FriendRelationEntity.RemoveRange(
@@ -66,7 +66,7 @@ namespace Communicator.Services
 
 			_context.UserEntity.Remove(user);
 			_context.SaveChanges();
-			return ErrorCodes.OK;
+			return Error.OK;
 		}
 
 		public string UpdateBankAccount(int id, string account)
@@ -74,12 +74,12 @@ namespace Communicator.Services
 			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
 			if (user == null)
 			{
-				return string.Format(ErrorCodes.CANNOT_FIND_USER, id);
+				return string.Format(Error.CANNOT_FIND_USER, id);
 			}
 
 			user.BankAccount = account;
 			_context.SaveChanges();
-			return ErrorCodes.OK;
+			return Error.OK;
 		}
 
 		public string UpdateCredentials(int id, UserUpdateCredentialsRequest request)
@@ -87,7 +87,7 @@ namespace Communicator.Services
 			var user = _context.UserEntity.FirstOrDefault(x => x.ID == id);
 			if (user == null)
 			{
-				return string.Format(ErrorCodes.CANNOT_FIND_USER, id);
+				return string.Format(Error.CANNOT_FIND_USER, id);
 			}
 
 			var loginReq = new UserLoginRequest
@@ -97,7 +97,7 @@ namespace Communicator.Services
 			};
 			if (Login(loginReq) == null)
 			{
-				return ErrorCodes.INVALID_OLD_PASSWORD;
+				return Error.INVALID_OLD_PASSWORD;
 			}
 
 			if (request.Login != user.Login)
@@ -108,7 +108,7 @@ namespace Communicator.Services
 				}
 				else
 				{
-					return string.Format(ErrorCodes.LOGIN_EXIST, request.Login);
+					return string.Format(Error.LOGIN_EXIST, request.Login);
 				}
 			}
 
@@ -120,7 +120,7 @@ namespace Communicator.Services
 				}
 				else
 				{
-					return string.Format(ErrorCodes.EMAIL_EXIST, request.Email);
+					return string.Format(Error.EMAIL_EXIST, request.Email);
 				}
 			}
 
@@ -132,7 +132,7 @@ namespace Communicator.Services
 			}
 
 			_context.SaveChanges();
-			return ErrorCodes.OK;
+			return Error.OK;
 			
 		}
 
