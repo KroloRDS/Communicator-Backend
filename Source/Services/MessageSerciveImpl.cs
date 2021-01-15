@@ -144,7 +144,15 @@ namespace Communicator.Services
 				FriendID = friendId,
 				Timestamp = DateTime.UtcNow,
 			});
-			return list.Count == 1 ? list.First() : null;
+			
+			if (list.Count != 1)
+			{
+				return null;
+			}
+
+			var message = list.First();
+			message.Content = message.Content.Substring(0, 17) + "...";
+			return message;
 		}
 	}
 }
