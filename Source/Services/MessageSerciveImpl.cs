@@ -114,11 +114,11 @@ namespace Communicator.Services
 				return new List<MessageResponse>();
 			}
 
-			return _context.MessageEntity
+			var list = _context.MessageEntity
 				.Where(x => ((x.SenderID == userId && x.ReceiverID == request.FriendID) ||
 				(x.ReceiverID == userId && x.SenderID == request.FriendID)) &&
 				x.SentDateTime < request.Timestamp)
-				.OrderBy(x => x.SentDateTime)
+				.OrderByDescending(x => x.SentDateTime)
 				.Take(request.Amount)
 				.Select(x => new MessageResponse
 				{
@@ -131,6 +131,9 @@ namespace Communicator.Services
 					SentDateTime = x.SentDateTime,
 					SeenByReceiver = x.SeenByReceiver
 				}).ToList();
+
+			list.Reverse();
+			return list;
 		}
 
 		public MessageResponse GetLastMessage(int userId, int friendId)
