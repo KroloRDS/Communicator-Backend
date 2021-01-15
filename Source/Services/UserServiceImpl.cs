@@ -118,6 +118,7 @@ namespace Communicator.Services
 				int random = new Random().Next();
 				string pw = request.NewPassword + random.ToString();
 				user.PasswordHash = Hash(pw);
+				user.Salt = random;
 			}
 
 			_context.SaveChanges();
