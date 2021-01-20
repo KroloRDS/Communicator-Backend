@@ -1,8 +1,11 @@
 ﻿using System.Security.Cryptography;
+using System.Net.Mail;
 using System.Text;
 using System.Linq;
+using System.Net;
 using System;
 
+using Communicator.Source.HelperClasses;
 using Communicator.HelperClasses;
 using Communicator.Entities;
 using Communicator.DTOs;
@@ -46,6 +49,9 @@ namespace Communicator.Services
 				PublicKey = "???" //TODO: generate from password = private key
 			});
 			_context.SaveChanges();
+
+			SendWelcomeEmail(request.Email);
+
 			return Error.OK;
 		}
 
@@ -166,6 +172,37 @@ namespace Communicator.Services
 			byte[] bytes = Encoding.UTF8.GetBytes(value);
 			bytes = SHA512Managed.Create().ComputeHash(bytes);
 			return Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+		}
+
+		private static void SendWelcomeEmail(string userEmail)
+		{
+			var config = new MailConfig();
+			if (config.Host == null)
+			{
+				Error.Log(new Exception(), "SMTP host is null");
+				return;
+			}
+
+			var client = new SmtpClient()
+			{
+				Host = config.Host,
+				Port = config.Port,
+				Credentials = new NetworkCredential(config.Login, config.Password),
+				EnableSsl = true,
+			};
+
+			try
+			{
+				client.Send(new MailMessage(config.Login, userEmail)
+				{
+					Subject = "Thank you for registering",
+					Body = "Thank you for registering in our app. We hope you'll have a great time!"
+				});
+			}
+			catch (Exception exception)
+			{
+				Error.Log(exception);
+			}
 		}
 	}
 }

@@ -31,6 +31,9 @@ namespace Communicator.HelperClasses
 				log += data + "\n";
 			}
 
+			var trace = exception.StackTrace;
+			log += trace[(trace.LastIndexOf('\n') + 1)..] + "\n";
+
 			File.AppendAllText("Logs\\error_log.txt", log + "\n\n");
 		}
 	}
