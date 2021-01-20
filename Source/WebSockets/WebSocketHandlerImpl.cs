@@ -8,6 +8,7 @@ using System.Text;
 using System.Linq;
 using System;
 
+using Communicator.Source.DTOs.JSONs;
 using Communicator.HelperClasses;
 using Communicator.Services;
 using Communicator.DTOs;
@@ -48,7 +49,7 @@ namespace Communicator.WebSockets
 			}
 			catch (Exception exception)
 			{
-				return JsonHandler.GetErrorResponse(exception, Encoding.UTF8.GetString(bytes));
+				return new JsonErrorResponse(exception, Encoding.UTF8.GetString(bytes)).GetBytes();
 			}
 
 			JToken data;
@@ -61,7 +62,7 @@ namespace Communicator.WebSockets
 			}
 			catch (Exception exception)
 			{
-				return JsonHandler.GetErrorResponse(exception, json.ToString());
+				return new JsonErrorResponse(exception, json.ToString()).GetBytes();
 			}
 
 			try
@@ -71,7 +72,7 @@ namespace Communicator.WebSockets
 			}
 			catch (Exception exception)
 			{
-				return JsonHandler.GetErrorResponse(exception);
+				return new JsonErrorResponse(exception).GetBytes();
 			}
 		}
 
@@ -93,9 +94,9 @@ namespace Communicator.WebSockets
 			return request switch
 			{
 				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
-				"IsLoggedInRequest" => JsonHandler.GetResponse(request, Error.NOT_LOGGED_IN),
-				"Register" => JsonHandler.GetResponse(request, services.User.Add(data.ToObject<UserCreateNewRequest>())),
-				_ => JsonHandler.GetResponse(request, string.Format(Error.CANNOT_FIND_REQUEST_OR_UNAUTHORIZED, request)),
+				"IsLoggedInRequest" => new JsonResponse(request, Error.NOT_LOGGED_IN).GetBytes(),
+				"Register" => new JsonResponse(request, services.User.Add(data.ToObject<UserCreateNewRequest>())).GetBytes(),
+				_ => new JsonResponse(request, string.Format(Error.CANNOT_FIND_REQUEST_OR_UNAUTHORIZED, request)).GetBytes(),
 			};
 		}
 
@@ -103,7 +104,7 @@ namespace Communicator.WebSockets
 		{
 			session.Clear();
 			_webSocketList.Remove(id);
-			return JsonHandler.GetResponse(request, Error.OK);
+			return new JsonResponse(request, Error.OK).GetBytes();
 		}
 
 		private byte[] ProcessFriendListRequest(Service services, string request, JToken data, int userId)
@@ -113,30 +114,30 @@ namespace Communicator.WebSockets
 			{
 				case "AddFriend":
 					var friendId = data.First.ToObject<int>();
-					var response = JsonHandler.GetResponse(request, service.Add(CreateRequest(userId, friendId)));
+					var response = new JsonResponse(request, service.Add(CreateRequest(userId, friendId)));
 
 					SendNotification(friendId, "PendingFriendList");
-					return response;
+					return response.GetBytes();
 
 				case "AcceptFriend":
 					friendId = data.First.ToObject<int>();
-					response = JsonHandler.GetResponse(request, service.Accept(CreateRequest(userId, friendId)));
+					response = new JsonResponse(request, service.Accept(CreateRequest(userId, friendId)));
 
 					SendNotification(friendId, "FriendList");
-					return response;
+					return response.GetBytes();
 
 				case "RemoveFriend":
 					friendId = data.First.ToObject<int>();
-					response = JsonHandler.GetResponse(request, service.Delete(CreateRequest(userId, friendId)));
+					response = new JsonResponse(request, service.Delete(CreateRequest(userId, friendId)));
 
 					SendNotification(friendId, "FriendList");
-					return response;
+					return response.GetBytes();
 
 				case "GetFriendList":
-					return JsonHandler.GetResponse(request, service.GetFriendList(userId, true));
+					return new JsonResponse(request, service.GetFriendList(userId, true)).GetBytes();
 
 				case "GetPendingFriendList":
-					return JsonHandler.GetResponse(request, service.GetFriendList(userId, false));
+					return new JsonResponse(request, service.GetFriendList(userId, false)).GetBytes();
 				default:
 					return ProcessMessageRequest(services, request, data, userId);
 			}
@@ -149,43 +150,43 @@ namespace Communicator.WebSockets
 			{
 				case "SendMessage":
 					var message = data.ToObject<MessageCreateNewRequest>();
-					var response = JsonHandler.GetResponse(request, service.Add(userId, message));
+					var response = new JsonResponse(request, service.Add(userId, message));
 
 					SendNotification(message.ReceiverID, "Message", userId);
-					return response;
+					return response.GetBytes();
 
 				case "DeleteMessage":
 					var messageId = data.First.ToObject<int>();
 					var receiverID = services.Message.GetByID(userId, messageId).ReceiverID;
-					response = JsonHandler.GetResponse(request, service.Delete(messageId));
+					response = new JsonResponse(request, service.Delete(messageId));
 
 					SendNotification(receiverID, "Message", userId);
-					return response;
+					return response.GetBytes();
 
 				case "SetMessageSeen":
 					messageId = data.First.ToObject<int>();
 					receiverID = services.Message.GetByID(userId, messageId).ReceiverID;
-					response = JsonHandler.GetResponse(request, service.UpdateSeen(messageId));
+					response = new JsonResponse(request, service.UpdateSeen(messageId));
 
 					SendNotification(receiverID, "Message", userId);
-					return response;
+					return response.GetBytes();
 
 				case "UpdateMessageContent":
 					messageId = data.SelectToken("messageId").ToObject<int>();
 					receiverID = services.Message.GetByID(userId, messageId).ReceiverID;
-					response = JsonHandler.GetResponse(request, service.UpdateContent(messageId,
+					response = new JsonResponse(request, service.UpdateContent(messageId,
 						data.SelectToken("messageContent").ToObject<string>()));
 
 					SendNotification(receiverID, "Message", userId);
-					return response;
+					return response.GetBytes();
 
 				case "GetMessage":
-					return JsonHandler.GetResponse(request, service.GetByID(
-						userId, data.First.ToObject<int>()));
+					return new JsonResponse(request, service.GetByID(
+						userId, data.First.ToObject<int>())).GetBytes();
 
 				case "GetMessagesBatch":
-					return JsonHandler.GetResponse(request, service.GetBatch(
-						userId, data.ToObject<MessageGetBatchRequest>()));
+					return new JsonResponse(request, service.GetBatch(
+						userId, data.ToObject<MessageGetBatchRequest>())).GetBytes();
 				default:
 					return ProcessUserRequest(services, request, data, userId);
 			}
@@ -196,24 +197,24 @@ namespace Communicator.WebSockets
 			switch (request)
 			{
 				case "DeleteUser":
-					var response = JsonHandler.GetResponse(request, services.User.Delete(userId));
+					var response = new JsonResponse(request, services.User.Delete(userId));
 					SendNotificationToAllFriends(services.FriendRelation, userId);
-					return response;
+					return response.GetBytes();
 
 				case "UpdateBankAccount":
-					return JsonHandler.GetResponse(request, services.User.UpdateBankAccount(
-						userId, data.First.ToObject<string>()));
+					return new JsonResponse(request, services.User.UpdateBankAccount(
+						userId, data.First.ToObject<string>())).GetBytes();
 
 				case "UpdateUserCredentials":
-					response = JsonHandler.GetResponse(request, services.User.UpdateCredentials(
+					response = new JsonResponse(request, services.User.UpdateCredentials(
 						userId, data.ToObject<UserUpdateCredentialsRequest>()));
 
 					SendNotificationToAllFriends(services.FriendRelation, userId);
-					return response;
+					return response.GetBytes();
 
 				case "GetUser":
-					return JsonHandler.GetResponse(request, services.User.GetByID(
-						data.First.ToObject<int>()));
+					return new JsonResponse(request, services.User.GetByID(
+						data.First.ToObject<int>())).GetBytes();
 				default:
 					return ProcessOtherRequest(services, request, data, userId);
 			}
@@ -224,10 +225,10 @@ namespace Communicator.WebSockets
 			return request switch
 			{
 				"Echo" => Encoding.UTF8.GetBytes(data.ToString()),
-				"IsLoggedInRequest" => JsonHandler.GetResponse(request, Error.OK),
-				"Register" => JsonHandler.GetResponse(request, Error.REGISTER_WHILE_LOGGED_IN),
+				"IsLoggedInRequest" => new JsonResponse(request, Error.OK).GetBytes(),
+				"Register" => new JsonResponse(request, Error.REGISTER_WHILE_LOGGED_IN).GetBytes(),
 				"MakePayment" => services.Payment.MakePayment(request, data, userId),
-				_ => JsonHandler.GetResponse(request, string.Format(Error.CANNOT_FIND_REQUEST, request)),
+				_ => new JsonResponse(request, string.Format(Error.CANNOT_FIND_REQUEST, request)).GetBytes(),
 			};
 		}
 
@@ -235,7 +236,7 @@ namespace Communicator.WebSockets
 		{
 			if (_webSocketList.ContainsKey(id))
 			{
-				_webSocketList[id].SendAsync(JsonHandler.GetUpdateRequest(requestName, paramId),
+				_webSocketList[id].SendAsync(new JsonUpdateRequest(requestName, paramId).GetBytes(),
 					WebSocketMessageType.Text, true, CancellationToken.None);
 			}
 		}

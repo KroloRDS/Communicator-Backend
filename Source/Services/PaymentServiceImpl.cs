@@ -4,8 +4,8 @@ using System.Net;
 using System.IO;
 using System;
 
+using Communicator.Source.DTOs.JSONs;
 using Communicator.HelperClasses;
-using Communicator.WebSockets;
 using Communicator.Entities;
 using Communicator.DTOs;
 
@@ -36,16 +36,16 @@ namespace Communicator.Services
 
 			if (!response.Response.Equals(Error.OK))
 			{
-				return JsonHandler.GetResponse(requestName, response);
+				return new JsonResponse(requestName, response).GetBytes();
 			}
 
 			var authorizeNetResponse = SendAuthorizeNetRequest(request);
 			if (!authorizeNetResponse.Equals(Error.OK))
 			{
 				UpdateStatus(response.ID, false);
-				return JsonHandler.GetResponse(requestName, authorizeNetResponse);
+				return new JsonResponse(requestName, authorizeNetResponse).GetBytes();
 			}
-			return JsonHandler.GetResponse(requestName, UpdateStatus(response.ID, true));
+			return new JsonResponse(requestName, UpdateStatus(response.ID, true)).GetBytes();
 		}
 
 		private PaymentResponse AddPayment(int userId, PaymentRequest request)
@@ -90,48 +90,42 @@ namespace Communicator.Services
 
 			using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
 			{
-				streamWriter.Write(CreateAuthorizeNetRequest(request).ToString());
+				streamWriter.Write(JObject.FromObject(CreateAuthorizeNetRequest(request)).ToString());
 			}
 
 			using var streamReader = new StreamReader(httpWebRequest.GetResponse().GetResponseStream());
 			var response = JObject.Parse(streamReader.ReadToEnd());
 
-			return response.SelectToken("transactionResponse").Value<string>("responseCode").Equals("1") &&
-				response.SelectToken("messages").Value<string>("resultCode").Equals("Ok") ?
-				Error.OK : response.SelectToken("errors").Values().First().Value<string>("errorText");
+			return response.SelectToken("messages").Value<string>("resultCode").Equals("Error") ?
+				response.SelectToken("messages.message").First.Value<string>("text") : Error.OK;
 		}
 
-		private static JObject CreateAuthorizeNetRequest(PaymentRequest request)
+		private static AuthorizeNetRequest CreateAuthorizeNetRequest(PaymentRequest request)
 		{
-			return new JObject
+			return new AuthorizeNetRequest
 			{
-				{ "createTransactionRequest", new JObject
+				createTransactionRequest = new CreateTransactionRequest
 				{
-					{ "merchantAuthentication", new JObject
+					merchantAuthentication = new MerchantAuthentication
 					{
-						{ "name", "3mK8nGVR2Pc" },
-						{ "transactionKey", "3G26PhZAX82f44pF" },
-					}
+						name = "3mK8nGVR2Pc",
+						transactionKey = "3G26PhZAX82f44pF"
 					},
-					{ "transactionRequest", new JObject
+					transactionRequest = new TransactionRequest
 					{
-						{ "transactionType", "authCaptureTransaction" },
-						{ "amount", request.Amount.ToString() },
-						{ "payment", new JObject
+						transactionType = "authCaptureTransaction",
+						amount = request.Amount,
+						payment = new Payment
 						{
-							{ "creditCard", new JObject
+							creditCard = new CreditCard
 							{
-								{ "cardNumber", request.CardNumber.ToString() },
-								{ "expirationDate", request.ExpirationDate.ToString() },
-								{ "cardCode", request.CardCode.ToString() },
+								cardNumber = request.CardNumber,
+								expirationDate = request.ExpirationDate,
+								cardCode = request.CardCode
 							}
-							},
 						}
-						},
 					}
-					},
 				}
-				},
 			};
 		}
 	}

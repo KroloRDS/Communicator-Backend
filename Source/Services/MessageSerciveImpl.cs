@@ -150,8 +150,12 @@ namespace Communicator.Services
 				return null;
 			}
 
+			int maxLen = 20;
 			var message = list.First();
-			message.Content = message.Content.Substring(0, 17) + "...";
+			if (message.Content.Length > maxLen)
+			{
+				message.Content = message.Content.Substring(0, maxLen - 3) + "...";
+			}
 			return message;
 		}
 	}
