@@ -9,16 +9,16 @@ namespace Communicator.Source.DTOs.JSONs
 			dataType = requestName + "Response";
 			if (obj is string str)
 			{
-				succesful = str.Equals(Error.OK);
+				successful = str.Equals(Error.OK);
 				data = str;
 			}
 			else
 			{
-				succesful = true;
+				successful = true;
 				data = obj;
 			}
 		}
 
-		public bool succesful { get; }
+		public bool successful { get; }
 	}
 }

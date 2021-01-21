@@ -9,14 +9,14 @@ namespace Communicator.Source.DTOs.JSONs
 		public JsonErrorResponse(Exception exception, string data = null)
 		{
 			dataType = "ErrorResponse";
-			succesful = false;
+			successful = false;
 			this.exception = exception.Message;
 			this.data = data;
 
 			Error.Log(exception, data);
 		}
 
-		public bool succesful { get; }
+		public bool successful { get; }
 		public string exception { get; }
 	}
 }

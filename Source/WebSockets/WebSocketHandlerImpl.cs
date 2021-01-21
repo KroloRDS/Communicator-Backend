@@ -246,10 +246,12 @@ namespace Communicator.WebSockets
 			foreach (var friendId in friendRelationService.GetFriendListIDs(userId, true))
 			{
 				SendNotification(friendId, "FriendList");
+				SendNotification(friendId, "Message", userId);
 			}
 			foreach (var friendId in friendRelationService.GetFriendListIDs(userId, false))
 			{
 				SendNotification(friendId, "PendingFriendList");
+				SendNotification(friendId, "Message", userId);
 			}
 		}
 
